@@ -1,0 +1,11 @@
+# Database connection files
+config.php
+db_connect.php
+connection.php
+
+# OS junk files
+Thumbs.db
+.DS_Store
+
+# Test image uploads
+images/uploads/
