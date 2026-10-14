@@ -1,3 +1,7 @@
+<?php
+session_start();
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -290,7 +294,7 @@
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
             <!-- Logo -->
-            <a class="navbar-brand" href="index.php">
+            <a class="navbar-brand" href="homepage.php">
                 <div class="logo-box"><i class="bi bi-book-half"></i></div>
                 Community Library Management System
             </a>
@@ -302,22 +306,37 @@
             
             <!-- Nav Links -->
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto gap-2 mt-3 mt-lg-0">
+                <ul class="navbar-nav ms-auto gap-2 mt-3 mt-lg-0 align-items-center">
                     <li class="nav-item">
-                        <a class="nav-link active" href="index.php">Home</a>
+                        <a class="nav-link active" href="homepage.php">Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="#">Catalog</a>
+                        <a class="nav-link" href="catalog.php">Catalog</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Membership</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Borrowing</a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">Contact</a>
-                    </li>
+
+                    <!-- Dynamic Session Links -->
+                    <?php if (isset($_SESSION['member_id'])): ?>
+                        <li class="nav-item">
+                            <?php if ($_SESSION['role_id'] == 1): ?>
+                                <!-- What Admins see -->
+                                <a class="nav-link fw-bold" style="color: #dcfce7;" href="admin_dashboard.php">Admin Panel</a>
+                            <?php else: ?>
+                                <!-- What Residents see -->
+                                <a class="nav-link fw-bold" style="color: #dcfce7;" href="member_dashboard.php">Dashboard</a>
+                            <?php endif; ?>
+                        </li>
+                        <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                            <a class="btn btn-danger text-white fw-semibold px-4 rounded-pill" href="logout.php">Logout</a>
+                        </li>
+                    <?php else: ?>
+                        <!-- What logged-out users see -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="register.php">Membership</a>
+                        </li>
+                        <li class="nav-item me-1">
+                            <a class="nav-link" href="login.php">Login</a>
+                        </li>
+                    <?php endif; ?>
                 </ul>
             </div>
         </div>
@@ -328,18 +347,22 @@
         <div class="container hero-content">
             <h1 class="hero-title">Grow Your Mind.<br>Connect Your Community.</h1>
             <p class="hero-subtitle">Explore thousands of books, borrow digital and physical resources, and learn together in a sustainable, modern environment.</p>
-            <div class="d-flex flex-column flex-sm-row justify-content-center gap-3 mt-5">
-                <a href="#" class="btn btn-primary-custom text-decoration-none">
-                    <i class="bi bi-search me-2"></i>Browse Books
-                </a>
-                <a href="#" class="btn btn-outline-custom text-decoration-none">
-                    Become a Member
-                </a>
+            
+            <div class="d-flex gap-3 justify-content-center">
+                <?php if (isset($_SESSION['member_id'])): ?>
+                    <a href="catalog.php" class="btn btn-primary-custom">Browse Catalog</a>
+                    
+                    <?php if ($_SESSION['role_id'] == 1): ?>
+                        <a href="admin_dashboard.php" class="btn btn-outline-custom">Admin Panel</a>
+                    <?php else: ?>
+                        <a href="member_dashboard.php" class="btn btn-outline-custom">My Dashboard</a>
+                    <?php endif; ?>
+
+                <?php else: ?>
+                    <a href="register.php" class="btn btn-primary-custom">Become a Member</a>
+                    <a href="catalog.php" class="btn btn-outline-custom">Explore Catalog</a>
+                <?php endif; ?>
             </div>
-            <div class="mt-4 text-white-50 small">
-                <i class="bi bi-shield-check me-1"></i> Free for all community residents
-            </div>
-        </div>
     </section>
 
     <!-- Quick Access / Featured Information Section -->
@@ -416,7 +439,7 @@
                 <span class="footer-divider d-none d-sm-inline">•</span>
                 <a href="#">Catalog</a>
                 <span class="footer-divider d-none d-sm-inline">•</span>
-                <a href="#">Membership</a>
+                <a href="login.php">Membership</a>
                 <span class="footer-divider d-none d-sm-inline">•</span>
                 <a href="#">Borrowing</a>
                 <span class="footer-divider d-none d-sm-inline">•</span>
