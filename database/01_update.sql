@@ -6,8 +6,19 @@ INSERT INTO books (category_id, title, author, available_copies) VALUES
 (1, 'Dune', 'Frank Herbert', 3),
 (2, 'PHP & MySQL Novice to Ninja', 'Kevin Yank', 5),
 (3, 'Philippine History', 'Teodoro Agoncillo', 2),
-(4, 'Noli Me Tangere', 'Jose Rizal', 0),
-(5, 'Noli Me Tangere', 'Jose Rizal', 0);
+(4, 'Noli Me Tangere', 'Jose Rizal', 0);
+
+--reservation table sql
+CREATE TABLE reservations (
+    reservation_id INT AUTO_INCREMENT PRIMARY KEY,
+    member_id INT NOT NULL,
+    book_id INT NOT NULL,
+    reserved_at DATETIME NOT NULL,
+    status ENUM('Active', 'Fulfilled', 'Cancelled') NOT NULL DEFAULT 'Active',
+    FOREIGN KEY (member_id) REFERENCES members(member_id) ON DELETE CASCADE,
+    FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE
+);
+
 
 
 INSERT INTO status (status_id, status) VALUES 
