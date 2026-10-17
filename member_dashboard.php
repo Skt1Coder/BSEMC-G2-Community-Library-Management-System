@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'includes/db_connect.php';
+require 'includes/overdue.php';
 
 // SECURITY: Kick out anyone who is not logged in OR is not a Resident (role_id 2)
 if (!isset($_SESSION['member_id']) || $_SESSION['role_id'] != 2) {
@@ -8,18 +9,72 @@ if (!isset($_SESSION['member_id']) || $_SESSION['role_id'] != 2) {
     exit();
 }
 
-// Fetch the member's borrowing history
+// Flip any past-due loans from 'Borrowed' to 'Overdue'
+update_overdue_statuses($pdo);
+
+// Fetch the member's borrowing history.
+// For unreturned late books the fine is calculated live; returned books use the saved fine.
 $member_id = $_SESSION['member_id'];
+$now = date('Y-m-d H:i:s');
+
 $stmt = $pdo->prepare("
-    SELECT b.title, t.borrowed_at, t.due_at, t.fine_amount, s.status 
-    FROM transaction t 
-    JOIN books b ON t.book_id = b.book_id 
-    JOIN status s ON t.status_id = s.status_id 
-    WHERE t.member_id = :member_id 
+    SELECT b.title, t.borrowed_at, t.due_at, s.status,
+        CASE
+            WHEN s.status IN ('Borrowed', 'Overdue') AND t.due_at < :now1
+            THEN CEIL(TIMESTAMPDIFF(SECOND, t.due_at, :now2) / 86400) * :rate
+            ELSE COALESCE(t.fine_amount, 0)
+        END AS fine_amount,
+        (s.status IN ('Borrowed', 'Overdue') AND t.due_at < :now3) AS is_late
+    FROM transaction t
+    JOIN books b ON t.book_id = b.book_id
+    JOIN status s ON t.status_id = s.status_id
+    WHERE t.member_id = :member_id
     ORDER BY t.borrowed_at DESC
 ");
-$stmt->execute(['member_id' => $member_id]);
+$stmt->execute([
+    'now1'      => $now,
+    'now2'      => $now,
+    'now3'      => $now,
+    'rate'      => FINE_PER_DAY,
+    'member_id' => $member_id
+]);
 $transactions = $stmt->fetchAll();
+
+// CSRF token for the Cancel Reservation buttons
+if (empty($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+
+// Active reservations with queue position (people ahead of this member)
+$res_stmt = $pdo->prepare("
+    SELECT r.reservation_id, b.title, r.reserved_at, b.available_copies,
+           (SELECT COUNT(*) FROM reservations r2
+            WHERE r2.book_id = r.book_id AND r2.status = 'Active'
+              AND r2.reservation_id < r.reservation_id) AS ahead
+    FROM reservations r
+    JOIN books b ON r.book_id = b.book_id
+    WHERE r.member_id = :member_id AND r.status = 'Active'
+    ORDER BY r.reserved_at ASC
+");
+$res_stmt->execute(['member_id' => $member_id]);
+$reservations = $res_stmt->fetchAll();
+
+$ready_count = 0;
+foreach ($reservations as $res) {
+    if ((int) $res['ahead'] < (int) $res['available_copies']) {
+        $ready_count++;
+    }
+}
+
+// Summary for the alert banner
+$overdue_count = 0;
+$accruing_fines = 0;
+foreach ($transactions as $row) {
+    if ($row['is_late']) {
+        $overdue_count++;
+        $accruing_fines += $row['fine_amount'];
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -52,6 +107,8 @@ $transactions = $stmt->fetchAll();
         }
 
         h1, h2, h3, h4, h5, .navbar-brand { font-family: 'Outfit', sans-serif; }
+
+        .text-theme { color: var(--primary-green); }
 
         /* Solid Green Navbar - Matches catalog.php */
         .navbar {
@@ -143,8 +200,39 @@ $transactions = $stmt->fetchAll();
 </nav>
 
 <!-- Main Content -->
-<div class="container mt-5">
+<div class="container mt-5 mb-5">
     <h2 class="mb-4 text-theme fw-bold">My Borrowed Books</h2>
+
+    <!-- Messages -->
+    <?php if (isset($_SESSION['success'])): ?>
+        <div class="alert alert-success"><?= htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?></div>
+    <?php endif; ?>
+    <?php if (isset($_SESSION['error'])): ?>
+        <div class="alert alert-danger"><?= htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></div>
+    <?php endif; ?>
+
+    <!-- Reservation Ready Alert -->
+    <?php if ($ready_count > 0): ?>
+        <div class="alert alert-success d-flex align-items-start gap-3" role="alert">
+            <i class="bi bi-bookmark-check-fill fs-4"></i>
+            <div>
+                <strong><?= $ready_count; ?> book<?= $ready_count > 1 ? 's' : ''; ?> you reserved <?= $ready_count > 1 ? 'are' : 'is'; ?> ready to borrow.</strong><br>
+                Go to the <a href="catalog.php" class="alert-link">catalog</a> and borrow <?= $ready_count > 1 ? 'them' : 'it'; ?> before someone else grabs the copy.
+            </div>
+        </div>
+    <?php endif; ?>
+
+    <!-- Overdue Alert -->
+    <?php if ($overdue_count > 0): ?>
+        <div class="alert alert-danger d-flex align-items-start gap-3" role="alert">
+            <i class="bi bi-exclamation-triangle-fill fs-4"></i>
+            <div>
+                <strong>You have <?= $overdue_count; ?> overdue book<?= $overdue_count > 1 ? 's' : ''; ?>.</strong><br>
+                Fines so far: <strong>₱<?= number_format($accruing_fines, 2); ?></strong>
+                (₱<?= number_format(FINE_PER_DAY, 2); ?> per day for each book). Please return them to the library as soon as possible, because the fine keeps growing every day.
+            </div>
+        </div>
+    <?php endif; ?>
     
     <div class="card card-custom p-4">
         <?php if (count($transactions) > 0): ?>
@@ -161,15 +249,15 @@ $transactions = $stmt->fetchAll();
                     </thead>
                     <tbody>
                         <?php foreach ($transactions as $row): ?>
-                            <tr>
+                            <tr class="<?= $row['is_late'] ? 'table-danger' : ''; ?>">
                                 <td><?= htmlspecialchars($row['title']); ?></td>
                                 <td><?= date("M d, Y", strtotime($row['borrowed_at'])); ?></td>
                                 <td><?= date("M d, Y", strtotime($row['due_at'])); ?></td>
                                 <td>
-                                    <?php if ($row['status'] == 'Borrowed'): ?>
-                                        <span class="badge bg-warning text-dark">Active</span>
-                                    <?php elseif ($row['status'] == 'Overdue'): ?>
+                                    <?php if ($row['is_late'] || $row['status'] == 'Overdue'): ?>
                                         <span class="badge bg-danger">Overdue</span>
+                                    <?php elseif ($row['status'] == 'Borrowed'): ?>
+                                        <span class="badge bg-warning text-dark">Active</span>
                                     <?php else: ?>
                                         <span class="badge bg-success">Returned</span>
                                     <?php endif; ?>
@@ -185,6 +273,60 @@ $transactions = $stmt->fetchAll();
         <?php else: ?>
             <div class="alert alert-info bg-light border-0 text-muted">
                 You haven't borrowed any books yet. Head over to the catalog to find your next read!
+            </div>
+        <?php endif; ?>
+    </div>
+
+    <!-- My Reservations -->
+    <h4 class="mt-5 mb-3 text-theme fw-bold">My Reservations</h4>
+    <div class="card card-custom p-4">
+        <?php if (count($reservations) > 0): ?>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Book Title</th>
+                            <th>Reserved On</th>
+                            <th>Status</th>
+                            <th class="text-end">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($reservations as $res): ?>
+                            <?php $is_ready = ((int) $res['ahead'] < (int) $res['available_copies']); ?>
+                            <tr>
+                                <td><?= htmlspecialchars($res['title']); ?></td>
+                                <td><?= date("M d, Y", strtotime($res['reserved_at'])); ?></td>
+                                <td>
+                                    <?php if ($is_ready): ?>
+                                        <span class="badge bg-success">Ready to borrow</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-secondary">#<?= (int) $res['ahead'] + 1; ?> in line</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="text-end">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <?php if ($is_ready): ?>
+                                            <a href="catalog.php?search=<?= urlencode($res['title']); ?>" class="btn btn-success btn-sm">Borrow</a>
+                                        <?php endif; ?>
+                                        <form action="reserve_process.php" method="POST" class="m-0"
+                                              onsubmit="return confirm('Cancel this reservation?');">
+                                            <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">
+                                            <input type="hidden" name="action" value="cancel">
+                                            <input type="hidden" name="from" value="dashboard">
+                                            <input type="hidden" name="reservation_id" value="<?= (int) $res['reservation_id']; ?>">
+                                            <button type="submit" class="btn btn-outline-danger btn-sm">Cancel</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <div class="text-muted">
+                You have no active reservations. When a book is out of stock, tap <strong>Reserve</strong> in the catalog to join the line.
             </div>
         <?php endif; ?>
     </div>

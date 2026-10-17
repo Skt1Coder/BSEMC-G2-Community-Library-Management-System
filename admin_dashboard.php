@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'includes/db_connect.php';
+require 'includes/overdue.php';
 
 // STRICT SECURITY: Kick out anyone who is NOT an Admin (role_id 1)
 if (!isset($_SESSION['member_id']) || $_SESSION['role_id'] != 1) {
@@ -8,16 +9,64 @@ if (!isset($_SESSION['member_id']) || $_SESSION['role_id'] != 1) {
     exit();
 }
 
-// Fetch all active transactions (borrowed books that haven't been returned)
-$stmt = $pdo->query("
-    SELECT t.transaction_id, b.title, m.firstname, m.lastname, t.borrowed_at, t.due_at 
-    FROM transaction t 
-    JOIN books b ON t.book_id = b.book_id 
-    JOIN members m ON t.member_id = m.member_id 
-    WHERE t.status_id = 1 
-    ORDER BY t.borrowed_at DESC
+// Flip any past-due loans from 'Borrowed' to 'Overdue'
+update_overdue_statuses($pdo);
+
+// Fetch all open loans (Borrowed + Overdue) with a live fine for late ones
+$now = date('Y-m-d H:i:s');
+
+$stmt = $pdo->prepare("
+    SELECT t.transaction_id, b.title, m.firstname, m.lastname, t.borrowed_at, t.due_at,
+        (t.due_at < :now1) AS is_late,
+        CASE
+            WHEN t.due_at < :now2
+            THEN CEIL(TIMESTAMPDIFF(SECOND, t.due_at, :now3) / 86400) * :rate
+            ELSE 0
+        END AS current_fine
+    FROM transaction t
+    JOIN books b ON t.book_id = b.book_id
+    JOIN members m ON t.member_id = m.member_id
+    JOIN status s ON t.status_id = s.status_id
+    WHERE s.status IN ('Borrowed', 'Overdue')
+    ORDER BY is_late DESC, t.due_at ASC
 ");
+$stmt->execute([
+    'now1' => $now,
+    'now2' => $now,
+    'now3' => $now,
+    'rate' => FINE_PER_DAY
+]);
 $active_loans = $stmt->fetchAll();
+
+// Summary numbers
+$total_loans    = count($active_loans);
+$overdue_count  = 0;
+$accruing_fines = 0;
+foreach ($active_loans as $loan) {
+    if ($loan['is_late']) {
+        $overdue_count++;
+        $accruing_fines += $loan['current_fine'];
+    }
+}
+
+// Active reservations grouped by book, with the waiting line in order
+$res_rows = $pdo->query("
+    SELECT b.book_id, b.title, b.available_copies,
+           COUNT(r.reservation_id) AS waiting,
+           GROUP_CONCAT(CONCAT(m.firstname, ' ', m.lastname)
+                        ORDER BY r.reservation_id SEPARATOR '||') AS queue
+    FROM reservations r
+    JOIN books b ON r.book_id = b.book_id
+    JOIN members m ON r.member_id = m.member_id
+    WHERE r.status = 'Active'
+    GROUP BY b.book_id, b.title, b.available_copies
+    ORDER BY waiting DESC, b.title ASC
+")->fetchAll();
+
+$total_reservations = 0;
+foreach ($res_rows as $row) {
+    $total_reservations += (int) $row['waiting'];
+}
 ?>
 
 <!DOCTYPE html>
@@ -51,6 +100,7 @@ $active_loans = $stmt->fetchAll();
         .nav-link:hover, .nav-link.active { color: white !important; background-color: rgba(255,255,255,0.15); }
 
         .card-custom { border-radius: 12px; border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 10px 30px rgba(0,0,0,0.04); background: white; }
+        .stat-number { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 1.75rem; line-height: 1.1; }
     </style>
 </head>
 <body>
@@ -77,11 +127,53 @@ $active_loans = $stmt->fetchAll();
 </nav>
 
 <!-- Main Content -->
-<div class="container mt-5">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="fw-bold" style="color: var(--primary-green);">Active Book Loans</h2>
-        <!-- Future connection for your colleague's add_book.php -->
-        <a href="#" class="btn btn-outline-success">Add New Book</a> 
+<div class="container mt-5 mb-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <h2 class="fw-bold mb-0" style="color: var(--primary-green);">Active Book Loans</h2>
+        <div class="d-flex gap-2">
+            <a href="manage_members.php" class="btn btn-outline-success">
+                <i class="bi bi-people"></i> Manage Members
+            </a>
+            <a href="add_book.php" class="btn btn-outline-success">
+                <i class="bi bi-plus-lg"></i> Add New Book
+            </a>
+        </div>
+    </div>
+
+    <!-- Messages -->
+    <?php if (isset($_SESSION['success'])): ?>
+        <div class="alert alert-success"><?= htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?></div>
+    <?php endif; ?>
+    <?php if (isset($_SESSION['error'])): ?>
+        <div class="alert alert-danger"><?= htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></div>
+    <?php endif; ?>
+
+    <!-- Summary -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="card card-custom p-3">
+                <div class="text-muted small">Books currently out</div>
+                <div class="stat-number"><?= $total_loans; ?></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-custom p-3">
+                <div class="text-muted small">Overdue books</div>
+                <div class="stat-number <?= $overdue_count > 0 ? 'text-danger' : 'text-success'; ?>"><?= $overdue_count; ?></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-custom p-3">
+                <div class="text-muted small">Fines accruing (₱<?= number_format(FINE_PER_DAY, 2); ?>/day per book)</div>
+                <div class="stat-number <?= $accruing_fines > 0 ? 'text-danger' : 'text-success'; ?>">₱<?= number_format($accruing_fines, 2); ?></div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card card-custom p-3">
+                <div class="text-muted small">Active reservations</div>
+                <div class="stat-number"><?= $total_reservations; ?></div>
+            </div>
+        </div>
     </div>
 
     <div class="card card-custom p-4">
@@ -94,20 +186,31 @@ $active_loans = $stmt->fetchAll();
                             <th>Borrower</th>
                             <th>Borrowed Date</th>
                             <th>Due Date</th>
+                            <th>Status</th>
+                            <th>Fine</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php foreach ($active_loans as $loan): ?>
-                            <tr>
+                            <tr class="<?= $loan['is_late'] ? 'table-danger' : ''; ?>">
                                 <td class="fw-bold"><?= htmlspecialchars($loan['title']); ?></td>
                                 <td><?= htmlspecialchars($loan['firstname'] . ' ' . $loan['lastname']); ?></td>
                                 <td><?= date("M d, Y", strtotime($loan['borrowed_at'])); ?></td>
-                                <td class="text-danger"><?= date("M d, Y", strtotime($loan['due_at'])); ?></td>
+                                <td class="<?= $loan['is_late'] ? 'text-danger fw-bold' : ''; ?>"><?= date("M d, Y", strtotime($loan['due_at'])); ?></td>
                                 <td>
-                                    <!-- Future connection for your colleague's return_process.php -->
+                                    <?php if ($loan['is_late']): ?>
+                                        <span class="badge bg-danger">Overdue</span>
+                                    <?php else: ?>
+                                        <span class="badge bg-warning text-dark">Active</span>
+                                    <?php endif; ?>
+                                </td>
+                                <td class="<?= $loan['current_fine'] > 0 ? 'text-danger fw-bold' : 'text-muted'; ?>">
+                                    ₱<?= number_format($loan['current_fine'], 2); ?>
+                                </td>
+                                <td>
                                     <form action="return_process.php" method="POST" class="m-0">
-                                        <input type="hidden" name="transaction_id" value="<?= $loan['transaction_id']; ?>">
+                                        <input type="hidden" name="transaction_id" value="<?= (int) $loan['transaction_id']; ?>">
                                         <button type="submit" class="btn btn-success btn-sm">Mark Returned</button>
                                     </form>
                                 </td>
@@ -118,6 +221,46 @@ $active_loans = $stmt->fetchAll();
             </div>
         <?php else: ?>
             <div class="alert alert-info border-0 text-muted">No active book loans at the moment.</div>
+        <?php endif; ?>
+    </div>
+
+    <!-- Book Reservations -->
+    <h4 class="mt-5 mb-3 fw-bold" style="color: var(--primary-green);">Book Reservations</h4>
+    <div class="card card-custom p-4">
+        <?php if (count($res_rows) > 0): ?>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Book Title</th>
+                            <th>Copies Available</th>
+                            <th>People Waiting</th>
+                            <th>Waiting Line</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php foreach ($res_rows as $row): ?>
+                            <?php $names = explode('||', $row['queue']); ?>
+                            <tr>
+                                <td class="fw-bold"><?= htmlspecialchars($row['title']); ?></td>
+                                <td class="<?= $row['available_copies'] > 0 ? 'text-success fw-bold' : 'text-muted'; ?>">
+                                    <?= (int) $row['available_copies']; ?>
+                                </td>
+                                <td><span class="badge bg-warning text-dark fs-6"><?= (int) $row['waiting']; ?></span></td>
+                                <td>
+                                    <ol class="mb-0 ps-3 small">
+                                        <?php foreach ($names as $name): ?>
+                                            <li><?= htmlspecialchars($name); ?></li>
+                                        <?php endforeach; ?>
+                                    </ol>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    </tbody>
+                </table>
+            </div>
+        <?php else: ?>
+            <div class="alert alert-info border-0 text-muted mb-0">No active reservations at the moment.</div>
         <?php endif; ?>
     </div>
 </div>

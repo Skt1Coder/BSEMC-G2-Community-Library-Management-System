@@ -2,33 +2,65 @@
 session_start();
 require 'includes/db_connect.php';
 
-// 1. Security Check: Only Admins can process returns
+require 'includes/overdue.php'; // defines FINE_PER_DAY
+const STATUS_RETURNED = 2;
+
+// Security Check: Only Admins can process returns
 if (!isset($_SESSION['member_id']) || $_SESSION['role_id'] != 1) {
     header("Location: catalog.php");
     exit();
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['transaction_id'])) {
-    $transaction_id = $_POST['transaction_id'];
+    $transaction_id = (int) $_POST['transaction_id'];
 
     try {
         $pdo->beginTransaction();
 
-        // 3. Find which book was borrowed in this specific transaction
-        $stmt = $pdo->prepare("SELECT book_id FROM transaction WHERE transaction_id = :transaction_id FOR UPDATE");
+        // Lock this loan and read what we need to calculate the fine
+        $stmt = $pdo->prepare("
+            SELECT book_id, status_id, due_at
+            FROM transaction
+            WHERE transaction_id = :transaction_id
+            FOR UPDATE
+        ");
         $stmt->execute(['transaction_id' => $transaction_id]);
         $transaction = $stmt->fetch();
 
-        if ($transaction) {
+        // Only process loans that haven't been returned yet
+        if ($transaction && $transaction['status_id'] != STATUS_RETURNED) {
             $book_id = $transaction['book_id'];
 
-            $update_trans = $pdo->prepare("UPDATE transaction SET status_id = 2 WHERE transaction_id = :transaction_id");
-            $update_trans->execute(['transaction_id' => $transaction_id]);
+            // Calculate fine: every started day past the due date costs FINE_PER_DAY
+            $fine = 0;
+            $now = new DateTime();
+            $due = new DateTime($transaction['due_at']);
+
+            if ($now > $due) {
+                $seconds_late = $now->getTimestamp() - $due->getTimestamp();
+                $days_late = (int) ceil($seconds_late / 86400);
+                $fine = $days_late * FINE_PER_DAY;
+            }
+
+            $update_trans = $pdo->prepare("
+                UPDATE transaction
+                SET status_id = :status_id, fine_amount = :fine
+                WHERE transaction_id = :transaction_id
+            ");
+            $update_trans->execute([
+                'status_id'      => STATUS_RETURNED,
+                'fine'           => $fine,
+                'transaction_id' => $transaction_id
+            ]);
 
             $update_book = $pdo->prepare("UPDATE books SET available_copies = available_copies + 1 WHERE book_id = :book_id");
             $update_book->execute(['book_id' => $book_id]);
 
             $pdo->commit();
+
+            $_SESSION['success'] = $fine > 0
+                ? "Book returned. Overdue fine: ₱" . number_format($fine, 2)
+                : "Book returned on time. No fine.";
 
             header("Location: admin_dashboard.php");
             exit();

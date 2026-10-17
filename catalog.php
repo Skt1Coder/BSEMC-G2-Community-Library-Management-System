@@ -7,31 +7,66 @@ $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 
 if ($search_query) {
     $stmt = $pdo->prepare("
-        SELECT b.book_id, b.title, b.author, b.available_copies, c.category 
-        FROM books b 
-        JOIN category c ON b.category_id = c.category_id 
+        SELECT b.book_id, b.title, b.author, b.available_copies, c.category
+        FROM books b
+        JOIN category c ON b.category_id = c.category_id
         WHERE b.title LIKE :search OR b.author LIKE :search
         ORDER BY b.title ASC
     ");
     $stmt->execute(['search' => "%$search_query%"]);
 } else {
     $stmt = $pdo->query("
-        SELECT b.book_id, b.title, b.author, b.available_copies, c.category 
-        FROM books b 
-        JOIN category c ON b.category_id = c.category_id 
+        SELECT b.book_id, b.title, b.author, b.available_copies, c.category
+        FROM books b
+        JOIN category c ON b.category_id = c.category_id
         ORDER BY b.title ASC
     ");
 }
 $books = $stmt->fetchAll();
-?>
 
+// Books this member currently has borrowed
+$borrowed_ids = [];
+if (isset($_SESSION['member_id'])) {
+    $b = $pdo->prepare("
+        SELECT book_id FROM transaction
+        WHERE member_id = :member_id AND status_id = 1
+    ");
+    $b->execute(['member_id' => $_SESSION['member_id']]);
+    $borrowed_ids = $b->fetchAll(PDO::FETCH_COLUMN);
+}
+
+// Reservations: how many people are waiting per book
+$res_counts = $pdo->query("
+    SELECT book_id, COUNT(*) FROM reservations WHERE status = 'Active' GROUP BY book_id
+")->fetchAll(PDO::FETCH_KEY_PAIR);
+
+// This member's active reservations: book_id => how many people are ahead of them
+$my_res = [];
+if (isset($_SESSION['member_id'])) {
+    $r = $pdo->prepare("
+        SELECT r.book_id,
+               (SELECT COUNT(*) FROM reservations r2
+                WHERE r2.book_id = r.book_id AND r2.status = 'Active'
+                  AND r2.reservation_id < r.reservation_id) AS ahead
+        FROM reservations r
+        WHERE r.member_id = :member_id AND r.status = 'Active'
+    ");
+    $r->execute(['member_id' => $_SESSION['member_id']]);
+    $my_res = $r->fetchAll(PDO::FETCH_KEY_PAIR);
+}
+
+// CSRF token for the Reserve buttons
+if (empty($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catalog - Community Library</title>
-    
+
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -58,10 +93,14 @@ $books = $stmt->fetchAll();
             font-family: 'Outfit', sans-serif;
         }
 
-        /* Exact Homepage Navbar Styling */
+        .text-theme {
+            color: var(--primary-green);
+        }
+
+        /* Navbar */
         .navbar {
             background-color: var(--primary-green) !important;
-            border-bottom: 1px solid rgba(0,0,0,0.1);
+            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
             padding: 1rem 0;
         }
 
@@ -70,27 +109,27 @@ $books = $stmt->fetchAll();
             align-items: center;
             gap: 12px;
             font-weight: 800;
-            color: white !important; /* Changed to white for contrast */
+            color: white !important;
             font-size: 1.25rem;
             letter-spacing: -0.5px;
         }
-        
+
         .logo-box {
             width: 40px;
             height: 40px;
-            background: white; /* Inverted logo box */
+            background: white;
             color: var(--primary-green);
             border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 1.2rem;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
             flex-shrink: 0;
         }
 
         .nav-link {
-            color: rgba(255,255,255,0.85) !important; /* Off-white for resting links */
+            color: rgba(255, 255, 255, 0.85) !important;
             font-weight: 500;
             font-size: 0.95rem;
             padding: 0.5rem 1rem !important;
@@ -98,14 +137,37 @@ $books = $stmt->fetchAll();
             border-radius: 8px;
         }
 
-        .nav-link:hover, .nav-link.active {
+        .nav-link:hover,
+        .nav-link.active {
             color: white !important;
-            background-color: rgba(255,255,255,0.15);
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+
+        /* Book cards */
+        .card-custom {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            background: white;
+            border: 1px solid #e7e5e4;
+            border-radius: 14px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card-custom:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+
+        .badge-category {
+            background-color: var(--accent-green);
+            color: var(--primary-green);
+            font-weight: 600;
         }
     </style>
 </head>
+<body>
 
-<!-- Navigation -->
 <!-- Navigation Bar -->
 <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
@@ -114,12 +176,12 @@ $books = $stmt->fetchAll();
             <div class="logo-box"><i class="bi bi-book-half"></i></div>
             Community Library Management System
         </a>
-        
+
         <!-- Mobile Toggle Button -->
         <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
-        
+
         <!-- Nav Links -->
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto gap-2 mt-3 mt-lg-0">
@@ -129,15 +191,15 @@ $books = $stmt->fetchAll();
                 <li class="nav-item">
                     <a class="nav-link active" href="catalog.php">Catalog</a>
                 </li>
-                
+
                 <!-- Dynamic Auth Options -->
                 <?php if (isset($_SESSION['member_id'])): ?>
                     <li class="nav-item">
                         <?php if ($_SESSION['role_id'] == 1): ?>
-                            <!-- What Admins see -->
+                            <!-- Admins -->
                             <a class="nav-link fw-bold" style="color: #dcfce7;" href="admin_dashboard.php">Admin Panel</a>
                         <?php else: ?>
-                            <!-- What Residents see -->
+                            <!-- Residents -->
                             <a class="nav-link fw-bold" style="color: #dcfce7;" href="member_dashboard.php">Dashboard</a>
                         <?php endif; ?>
                     </li>
@@ -145,7 +207,7 @@ $books = $stmt->fetchAll();
                         <a class="btn btn-danger text-white fw-semibold px-4 rounded-pill" href="logout.php">Logout</a>
                     </li>
                 <?php else: ?>
-                    <!-- What logged-out users see -->
+                    <!-- Logged-out users -->
                     <li class="nav-item">
                         <a class="nav-link" href="register.php">Membership</a>
                     </li>
@@ -169,12 +231,20 @@ $books = $stmt->fetchAll();
             <form action="catalog.php" method="GET" class="d-flex">
                 <input type="text" name="search" class="form-control me-2" placeholder="Search by title or author..." value="<?= htmlspecialchars($search_query); ?>">
                 <button type="submit" class="btn btn-success" style="background-color: #2b5329;">Search</button>
-                <?php if($search_query): ?>
+                <?php if ($search_query): ?>
                     <a href="catalog.php" class="btn btn-secondary ms-2">Clear</a>
                 <?php endif; ?>
             </form>
         </div>
     </div>
+
+    <!-- Messages -->
+    <?php if (isset($_SESSION['success'])): ?>
+        <div class="alert alert-success"><?= htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?></div>
+    <?php endif; ?>
+    <?php if (isset($_SESSION['error'])): ?>
+        <div class="alert alert-danger"><?= htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></div>
+    <?php endif; ?>
 
     <!-- Books Grid -->
     <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
@@ -185,19 +255,39 @@ $books = $stmt->fetchAll();
                         <span class="badge badge-category mb-2 align-self-start"><?= htmlspecialchars($book['category']); ?></span>
                         <h5 class="card-title fw-bold text-dark mb-1"><?= htmlspecialchars($book['title']); ?></h5>
                         <p class="text-muted small mb-3">by <?= htmlspecialchars($book['author']); ?></p>
-                        
+
                         <div class="mt-auto border-top pt-3 d-flex justify-content-between align-items-center">
                             <span class="small fw-bold <?= $book['available_copies'] > 0 ? 'text-success' : 'text-danger' ?>">
                                 <?= $book['available_copies']; ?> Available
                             </span>
-                            
-                            <?php if ($book['available_copies'] > 0): ?>
+
+                            <?php
+                                $bid   = $book['book_id'];
+                                $avail = (int) $book['available_copies'];
+                                $held  = (int) ($res_counts[$bid] ?? 0);
+                                $ahead = isset($my_res[$bid]) ? (int) $my_res[$bid] : null; // null = member has no reservation
+                            ?>
+                            <?php if (in_array($bid, $borrowed_ids)): ?>
+                                <button class="btn btn-secondary btn-sm" disabled>Already Borrowed</button>
+                            <?php elseif ($ahead !== null && $ahead < $avail): ?>
                                 <form action="borrow_process.php" method="POST" class="m-0">
-                                    <input type="hidden" name="book_id" value="<?= $book['book_id']; ?>">
+                                    <input type="hidden" name="book_id" value="<?= $bid; ?>">
+                                    <button type="submit" class="btn btn-success btn-sm">Borrow (reserved for you)</button>
+                                </form>
+                            <?php elseif ($ahead !== null): ?>
+                                <span class="badge bg-info text-dark">Reserved &middot; #<?= $ahead + 1; ?> in line</span>
+                            <?php elseif ($avail > $held): ?>
+                                <form action="borrow_process.php" method="POST" class="m-0">
+                                    <input type="hidden" name="book_id" value="<?= $bid; ?>">
                                     <button type="submit" class="btn btn-outline-success btn-sm">Borrow</button>
                                 </form>
                             <?php else: ?>
-                                <button class="btn btn-outline-danger btn-sm" disabled>Out of Stock</button>
+                                <form action="reserve_process.php" method="POST" class="m-0">
+                                    <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">
+                                    <input type="hidden" name="action" value="reserve">
+                                    <input type="hidden" name="book_id" value="<?= $bid; ?>">
+                                    <button type="submit" class="btn btn-outline-warning btn-sm">Reserve</button>
+                                </form>
                             <?php endif; ?>
                         </div>
                     </div>
