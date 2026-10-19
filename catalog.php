@@ -2,34 +2,41 @@
 session_start();
 require 'includes/db_connect.php';
 
-// Check if the user submitted a search query
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
+$category_filter = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
+
+// Fetch all categories for the dropdown
+$cat_stmt = $pdo->query("SELECT category_id, category FROM category ORDER BY category ASC");
+$categories = $cat_stmt->fetchAll();
+
+// Dynamically build the search query
+$query = "SELECT b.book_id, b.title, b.author, b.available_copies, c.category
+          FROM books b
+          JOIN category c ON b.category_id = c.category_id
+          WHERE 1=1";
+$params = [];
 
 if ($search_query) {
-    $stmt = $pdo->prepare("
-        SELECT b.book_id, b.title, b.author, b.available_copies, c.category
-        FROM books b
-        JOIN category c ON b.category_id = c.category_id
-        WHERE b.title LIKE :search OR b.author LIKE :search
-        ORDER BY b.title ASC
-    ");
-    $stmt->execute(['search' => "%$search_query%"]);
-} else {
-    $stmt = $pdo->query("
-        SELECT b.book_id, b.title, b.author, b.available_copies, c.category
-        FROM books b
-        JOIN category c ON b.category_id = c.category_id
-        ORDER BY b.title ASC
-    ");
+    $query .= " AND (b.title LIKE :search OR b.author LIKE :search)";
+    $params['search'] = "%$search_query%";
 }
+if ($category_filter > 0) {
+    $query .= " AND b.category_id = :cat_id";
+    $params['cat_id'] = $category_filter;
+}
+$query .= " ORDER BY b.title ASC";
+
+$stmt = $pdo->prepare($query);
+$stmt->execute($params);
 $books = $stmt->fetchAll();
 
 // Books this member currently has borrowed
 $borrowed_ids = [];
 if (isset($_SESSION['member_id'])) {
     $b = $pdo->prepare("
-        SELECT book_id FROM transaction
-        WHERE member_id = :member_id AND status_id = 1
+        SELECT t.book_id FROM transaction t
+        JOIN status s ON t.status_id = s.status_id
+        WHERE t.member_id = :member_id AND s.status IN ('Borrowed', 'Overdue')
     ");
     $b->execute(['member_id' => $_SESSION['member_id']]);
     $borrowed_ids = $b->fetchAll(PDO::FETCH_COLUMN);
@@ -204,7 +211,11 @@ if (empty($_SESSION['csrf'])) {
                         <?php endif; ?>
                     </li>
                     <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
-                        <a class="btn btn-danger text-white fw-semibold px-4 rounded-pill" href="logout.php">Logout</a>
+                        <a class="btn fw-semibold px-4 rounded-pill" 
+                        style="background-color: transparent; border: 1.5px solid white; color: white; transition: all 0.2s;" 
+                        onmouseover="this.style.backgroundColor='var(--accent-green)'; this.style.borderColor='var(--accent-green)'; this.style.color='var(--primary-green)';" 
+                        onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='white'; this.style.color='white';" 
+                        href="logout.php">Logout</a>
                     </li>
                 <?php else: ?>
                     <!-- Logged-out users -->
@@ -228,11 +239,19 @@ if (empty($_SESSION['csrf'])) {
         </div>
         <div class="col-md-6">
             <!-- Search Form -->
-            <form action="catalog.php" method="GET" class="d-flex">
-                <input type="text" name="search" class="form-control me-2" placeholder="Search by title or author..." value="<?= htmlspecialchars($search_query); ?>">
-                <button type="submit" class="btn btn-success" style="background-color: #2b5329;">Search</button>
-                <?php if ($search_query): ?>
-                    <a href="catalog.php" class="btn btn-secondary ms-2">Clear</a>
+            <form action="catalog.php" method="GET" class="d-flex gap-2">
+                <select name="category_id" class="form-select" style="max-width: 180px;">
+                    <option value="0">All Categories</option>
+                    <?php foreach ($categories as $cat): ?>
+                        <option value="<?= $cat['category_id']; ?>" <?= $category_filter == $cat['category_id'] ? 'selected' : ''; ?>>
+                            <?= htmlspecialchars($cat['category']); ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
+                <input type="text" name="search" class="form-control" placeholder="Search by title or author..." value="<?= htmlspecialchars($search_query); ?>">
+                <button type="submit" class="btn btn-success px-4" style="background-color: #14532d;">Filter</button>
+                <?php if ($search_query || $category_filter > 0): ?>
+                    <a href="catalog.php" class="btn btn-secondary">Clear</a>
                 <?php endif; ?>
             </form>
         </div>
@@ -270,9 +289,9 @@ if (empty($_SESSION['csrf'])) {
                             <?php if (in_array($bid, $borrowed_ids)): ?>
                                 <button class="btn btn-secondary btn-sm" disabled>Already Borrowed</button>
                             <?php elseif ($ahead !== null && $ahead < $avail): ?>
-                                <form action="borrow_process.php" method="POST" class="m-0">
+                                <form action="borrow_process.php" method="POST" class="m-0">                                
                                     <input type="hidden" name="book_id" value="<?= $bid; ?>">
-                                    <button type="submit" class="btn btn-success btn-sm">Borrow (reserved for you)</button>
+                                    <button type="submit" class="btn btn-success btn-sm">Borrow (reserved)</button>
                                 </form>
                             <?php elseif ($ahead !== null): ?>
                                 <span class="badge bg-info text-dark">Reserved &middot; #<?= $ahead + 1; ?> in line</span>
@@ -283,7 +302,6 @@ if (empty($_SESSION['csrf'])) {
                                 </form>
                             <?php else: ?>
                                 <form action="reserve_process.php" method="POST" class="m-0">
-                                    <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">
                                     <input type="hidden" name="action" value="reserve">
                                     <input type="hidden" name="book_id" value="<?= $bid; ?>">
                                     <button type="submit" class="btn btn-outline-warning btn-sm">Reserve</button>

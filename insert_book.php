@@ -13,10 +13,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-// CSRF check
-if (!hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf'] ?? '')) {
-    die('Invalid request.');
-}
 
 $action  = $_POST['action'] ?? '';
 $book_id = (int) ($_POST['book_id'] ?? 0);

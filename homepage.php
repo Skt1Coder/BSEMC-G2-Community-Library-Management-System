@@ -1,5 +1,25 @@
 <?php
 session_start();
+require 'includes/db_connect.php';
+require_once 'includes/overdue.php'; 
+
+try {
+    $total_titles     = $pdo->query("SELECT COUNT(*) FROM books")->fetchColumn();
+    $total_categories = $pdo->query("SELECT COUNT(*) FROM category")->fetchColumn();
+
+    $latest_stmt = $pdo->query("
+        SELECT b.title, b.author, c.category 
+        FROM books b 
+        JOIN category c ON b.category_id = c.category_id 
+        ORDER BY b.book_id DESC LIMIT 3
+    ");
+    $latest_books = $latest_stmt->fetchAll();
+} catch (Exception $e) {
+    // Fallback if queries fail
+    $total_titles = 0;
+    $total_categories = 0;
+    $latest_books = [];
+}
 ?>
 
 <!DOCTYPE html>
@@ -20,14 +40,13 @@ session_start();
 
     <style>
         :root {
-            /* Modern Green Earthy Palette */
-            --primary-green: #14532d; /* Forest Green (Tailwind green-900) */
-            --primary-hover: #166534; /* Emerald 800 */
-            --accent-green: #dcfce7; /* Sage/Soft Green (Tailwind green-100) */
-            --dark-bg: #1c1917; /* Stone 900 */
-            --light-bg: #fafaf9; /* Off-white (Stone 50) */
-            --text-main: #292524; /* Stone 800 */
-            --text-muted: #78716c; /* Stone 500 */
+            --primary-green: #14532d;
+            --primary-hover: #166534;
+            --accent-green: #dcfce7;
+            --dark-bg: #1c1917;
+            --light-bg: #fafaf9;
+            --text-main: #292524;
+            --text-muted: #78716c;
         }
 
         body {
@@ -36,11 +55,8 @@ session_start();
             color: var(--text-main);
         }
 
-        h1, h2, h3, h4, h5, .navbar-brand {
-            font-family: 'Outfit', sans-serif;
-        }
+        h1, h2, h3, h4, h5, .navbar-brand { font-family: 'Outfit', sans-serif; }
 
-        /* Navbar Styling */
         .navbar {
             background-color: rgba(250, 250, 249, 0.95) !important;
             backdrop-filter: blur(10px);
@@ -86,7 +102,6 @@ session_start();
             background-color: var(--accent-green);
         }
 
-        /* Hero Section */
         .hero-section {
             background: linear-gradient(135deg, var(--primary-green) 0%, #166534 100%);
             position: relative;
@@ -95,34 +110,6 @@ session_start();
             border-bottom-left-radius: 50px;
             border-bottom-right-radius: 50px;
             box-shadow: 0 10px 30px rgba(20, 83, 45, 0.15);
-        }
-
-        /* Organic Background Shapes */
-        .hero-section::before {
-            content: '';
-            position: absolute;
-            top: -20%;
-            left: -5%;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(220, 252, 231, 0.1) 0%, rgba(255,255,255,0) 70%);
-            border-radius: 50%;
-        }
-
-        .hero-section::after {
-            content: '';
-            position: absolute;
-            bottom: -30%;
-            right: 5%;
-            width: 600px;
-            height: 600px;
-            background: radial-gradient(circle, rgba(220, 252, 231, 0.08) 0%, rgba(255,255,255,0) 70%);
-            border-radius: 50%;
-        }
-
-        .hero-content {
-            position: relative;
-            z-index: 10;
         }
 
         .hero-title {
@@ -144,7 +131,6 @@ session_start();
             margin-right: auto;
         }
 
-        /* Buttons */
         .btn-primary-custom {
             background-color: var(--light-bg);
             color: var(--primary-green);
@@ -181,9 +167,8 @@ session_start();
             color: white;
         }
 
-        /* Features Section */
         .features-wrapper {
-            margin-top: -70px; /* Pulls cards up over the hero curve */
+            margin-top: -70px;
             position: relative;
             z-index: 20;
             padding-bottom: 90px;
@@ -213,16 +198,16 @@ session_start();
         }
 
         .icon-circle {
-            width: 64px;
-            height: 64px;
+            width: 56px;
+            height: 56px;
             background-color: var(--accent-green);
             color: var(--primary-green);
-            border-radius: 18px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem;
-            margin-bottom: 1.5rem;
+            font-size: 1.6rem;
+            margin-bottom: 1.25rem;
             transition: all 0.3s ease;
         }
 
@@ -245,7 +230,6 @@ session_start();
             line-height: 1.6;
         }
 
-        /* Footer */
         .footer {
             background-color: var(--dark-bg);
             padding: 70px 0 40px;
@@ -271,20 +255,11 @@ session_start();
         .footer-links a:hover {
             color: var(--accent-green);
         }
-        
-        .footer-divider {
-            color: #57534e;
-        }
 
-        /* Responsive Tweaks */
-        @media (max-width: 991px) {
-            .navbar-brand { font-size: 1.1rem; }
-        }
         @media (max-width: 768px) {
             .hero-title { font-size: 2.5rem; }
-            .features-wrapper { margin-top: 30px; } /* Reset overlap on mobile */
+            .features-wrapper { margin-top: 30px; }
             .hero-section { border-radius: 0 0 30px 30px; padding: 100px 20px 80px; }
-            .navbar-brand { font-size: 1.1rem; white-space: normal; }
         }
     </style>
 </head>
@@ -293,18 +268,15 @@ session_start();
     <!-- Navigation Bar -->
     <nav class="navbar navbar-expand-lg sticky-top">
         <div class="container">
-            <!-- Logo -->
             <a class="navbar-brand" href="homepage.php">
                 <div class="logo-box"><i class="bi bi-book-half"></i></div>
                 Community Library Management System
             </a>
             
-            <!-- Mobile Toggle Button -->
             <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
             
-            <!-- Nav Links -->
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ms-auto gap-2 mt-3 mt-lg-0 align-items-center">
                     <li class="nav-item">
@@ -314,22 +286,22 @@ session_start();
                         <a class="nav-link" href="catalog.php">Catalog</a>
                     </li>
 
-                    <!-- Dynamic Session Links -->
                     <?php if (isset($_SESSION['member_id'])): ?>
                         <li class="nav-item">
                             <?php if ($_SESSION['role_id'] == 1): ?>
-                                <!-- What Admins see -->
-                                <a class="nav-link fw-bold" style="color: #dcfce7;" href="admin_dashboard.php">Admin Panel</a>
+                                <a class="nav-link fw-bold" style="color: #14532d;" href="admin_dashboard.php">Admin Panel</a>
                             <?php else: ?>
-                                <!-- What Residents see -->
-                                <a class="nav-link fw-bold" style="color: #dcfce7;" href="member_dashboard.php">Dashboard</a>
+                                <a class="nav-link fw-bold" style="color: #14532d;" href="member_dashboard.php">Dashboard</a>
                             <?php endif; ?>
                         </li>
                         <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
-                            <a class="btn btn-danger text-white fw-semibold px-4 rounded-pill" href="logout.php">Logout</a>
+                            <a class="btn fw-semibold px-4 rounded-pill" 
+                            style="background-color: transparent; border: 1.5px solid var(--primary-green); color: var(--primary-green); transition: all 0.2s;" 
+                            onmouseover="this.style.backgroundColor='var(--accent-green)'; this.style.borderColor='var(--accent-green)';" 
+                            onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='var(--primary-green)';" 
+                            href="logout.php">Logout</a>
                         </li>
                     <?php else: ?>
-                        <!-- What logged-out users see -->
                         <li class="nav-item">
                             <a class="nav-link" href="register.php">Membership</a>
                         </li>
@@ -346,81 +318,128 @@ session_start();
     <section class="hero-section text-center text-white d-flex align-items-center justify-content-center">
         <div class="container hero-content">
             <h1 class="hero-title">Grow Your Mind.<br>Connect Your Community.</h1>
-            <p class="hero-subtitle">Explore thousands of books, borrow digital and physical resources, and learn together in a sustainable, modern environment.</p>
+            <p class="hero-subtitle">Explore thousands of books, reserve physical resources, and manage loans in a seamless modern environment.</p>
             
             <div class="d-flex gap-3 justify-content-center">
                 <?php if (isset($_SESSION['member_id'])): ?>
                     <a href="catalog.php" class="btn btn-primary-custom">Browse Catalog</a>
-                    
                     <?php if ($_SESSION['role_id'] == 1): ?>
                         <a href="admin_dashboard.php" class="btn btn-outline-custom">Admin Panel</a>
                     <?php else: ?>
                         <a href="member_dashboard.php" class="btn btn-outline-custom">My Dashboard</a>
                     <?php endif; ?>
-
                 <?php else: ?>
                     <a href="register.php" class="btn btn-primary-custom">Become a Member</a>
                     <a href="catalog.php" class="btn btn-outline-custom">Explore Catalog</a>
                 <?php endif; ?>
             </div>
+        </div>
     </section>
 
-    <!-- Quick Access / Featured Information Section -->
+    <!-- Dynamic Quick Access Section -->
     <section class="features-wrapper">
         <div class="container">
             <div class="text-center mb-5 d-none d-md-block">
-                <p class="section-header">Quick Access</p>
+                <p class="section-header">Overview</p>
             </div>
             
             <div class="row g-4 justify-content-center">
-                <!-- Card 1 -->
+                <!-- Card 1: Dynamic Library Collection Stats -->
                 <div class="col-12 col-md-6 col-lg-3">
                     <div class="card feature-card h-100 p-4">
-                        <div class="card-body p-0">
+                        <div class="card-body p-0 d-flex flex-column">
+                            <div class="icon-circle">
+                                <i class="bi bi-collection-fill"></i>
+                            </div>
+                            <h5 class="card-title">Collection Size</h5>
+                            <p class="card-text mb-3">Our catalog is live and updated in real-time by library administrators.</p>
+                            <div class="mt-auto pt-3 border-top">
+                                <div class="d-flex justify-content-between align-items-center small">
+                                    <span class="text-muted">Total Titles:</span>
+                                    <span class="fw-bold text-success fs-6"><?= $total_titles; ?></span>
+                                </div>
+                                <div class="d-flex justify-content-between align-items-center small mt-1">
+                                    <span class="text-muted">Categories:</span>
+                                    <span class="fw-bold text-dark fs-6"><?= $total_categories; ?></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card 2: Live New Arrivals -->
+                <div class="col-12 col-md-6 col-lg-3">
+                    <div class="card feature-card h-100 p-4">
+                        <div class="card-body p-0 d-flex flex-column">
                             <div class="icon-circle">
                                 <i class="bi bi-stars"></i>
                             </div>
-                            <h5 class="card-title">Featured Books</h5>
-                            <p class="card-text">Discover our staff's top picks and the most highly-rated community reads this month.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Card 2 -->
-                <div class="col-12 col-md-6 col-lg-3">
-                    <div class="card feature-card h-100 p-4">
-                        <div class="card-body p-0">
-                            <div class="icon-circle">
-                                <i class="bi bi-journal-bookmark-fill"></i>
-                            </div>
                             <h5 class="card-title">New Arrivals</h5>
-                            <p class="card-text">Stay updated with the latest additions to our growing physical and digital collections.</p>
+                            <?php if (count($latest_books) > 0): ?>
+                                <ul class="list-unstyled mb-3 small">
+                                    <?php foreach ($latest_books as $b): ?>
+                                        <li class="mb-2 text-truncate">
+                                            <i class="bi bi-book me-1 text-success"></i>
+                                            <strong><?= htmlspecialchars($b['title']); ?></strong>
+                                        </li>
+                                    <?php endforeach; ?>
+                                </ul>
+                            <?php else: ?>
+                                <p class="card-text mb-3">Check out our newly acquired catalog items on the catalog page.</p>
+                            <?php endif; ?>
+                            <div class="mt-auto pt-3 border-top">
+                                <a href="catalog.php" class="btn btn-sm btn-outline-success w-100 rounded-pill">View in Catalog</a>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Card 3 -->
+                <!-- Card 3: Dynamic Contextual Action Card -->
                 <div class="col-12 col-md-6 col-lg-3">
                     <div class="card feature-card h-100 p-4">
-                        <div class="card-body p-0">
+                        <div class="card-body p-0 d-flex flex-column">
                             <div class="icon-circle">
-                                <i class="bi bi-laptop"></i>
+                                <i class="bi bi-person-workspace"></i>
                             </div>
-                            <h5 class="card-title">Library Services</h5>
-                            <p class="card-text">Access study rooms, computers, printing stations, and our secure community Wi-Fi.</p>
+                            <h5 class="card-title">Quick Actions</h5>
+                            <?php if (isset($_SESSION['member_id']) && $_SESSION['role_id'] == 1): ?>
+                                <p class="card-text mb-3">Admin options to manage inventory, return loans, and review queues.</p>
+                                <div class="mt-auto pt-3 border-top">
+                                    <a href="add_book.php" class="btn btn-sm btn-success w-100 rounded-pill mb-2">+ Add New Book</a>
+                                    <a href="admin_dashboard.php" class="btn btn-sm btn-outline-success w-100 rounded-pill">Admin Dashboard</a>
+                                </div>
+                            <?php elseif (isset($_SESSION['member_id'])): ?>
+                                <p class="card-text mb-3">Review your borrowed items, due dates, and active book reservations.</p>
+                                <div class="mt-auto pt-3 border-top">
+                                    <a href="member_dashboard.php" class="btn btn-sm btn-success w-100 rounded-pill">My Loans & Fines</a>
+                                </div>
+                            <?php else: ?>
+                                <p class="card-text mb-3">Register for a member account to borrow books and place reservations.</p>
+                                <div class="mt-auto pt-3 border-top">
+                                    <a href="register.php" class="btn btn-sm btn-success w-100 rounded-pill">Create Account</a>
+                                </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
 
-                <!-- Card 4 -->
+                <!-- Card 4: Real System Rules & Policy -->
                 <div class="col-12 col-md-6 col-lg-3">
                     <div class="card feature-card h-100 p-4">
-                        <div class="card-body p-0">
+                        <div class="card-body p-0 d-flex flex-column">
                             <div class="icon-circle">
-                                <i class="bi bi-megaphone-fill"></i>
+                                <i class="bi bi-shield-check"></i>
                             </div>
-                            <h5 class="card-title">Announcements</h5>
-                            <p class="card-text">Check upcoming reading events, holiday hours, and special community workshops.</p>
+                            <h5 class="card-title">Borrowing Rules</h5>
+                            <p class="card-text mb-2 small text-muted">
+                                Standard loan period is <strong>7 days</strong> per book.
+                            </p>
+                            <p class="card-text mb-3 small text-muted">
+                                Late returns incur an automated fine of <strong>₱<?= number_format(FINE_PER_DAY, 2); ?>/day</strong>.
+                            </p>
+                            <div class="mt-auto pt-3 border-top">
+                                <span class="badge bg-light text-dark border w-100 py-2">First Come, First Served Queue</span>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -435,18 +454,14 @@ session_start();
                 <i class="bi bi-book-half me-2" style="color: var(--accent-green);"></i>Community Library Management System
             </div>
             <div class="footer-links my-4 d-flex flex-wrap justify-content-center gap-2">
-                <a href="#">Home</a>
+                <a href="homepage.php">Home</a>
                 <span class="footer-divider d-none d-sm-inline">•</span>
-                <a href="#">Catalog</a>
+                <a href="catalog.php">Catalog</a>
                 <span class="footer-divider d-none d-sm-inline">•</span>
-                <a href="login.php">Membership</a>
-                <span class="footer-divider d-none d-sm-inline">•</span>
-                <a href="#">Borrowing</a>
-                <span class="footer-divider d-none d-sm-inline">•</span>
-                <a href="#">Contact</a>
+                <a href="register.php">Membership</a>
             </div>
             <p class="text-secondary small mb-0 mt-4" style="opacity: 0.7;">
-                &copy; 2026 Community Library Management System.<br>Designed for Student Development.
+                &copy; <?= date('Y'); ?> Community Library Management System.<br>Designed for Student Development.
             </p>
         </div>
     </footer>

@@ -12,6 +12,12 @@ if (!isset($_SESSION['member_id']) || $_SESSION['role_id'] != 1) {
 // Flip any past-due loans from 'Borrowed' to 'Overdue'
 update_overdue_statuses($pdo);
 
+$pdo->query("
+    UPDATE reservations 
+    SET status = 'Cancelled' 
+    WHERE status = 'Active' AND expires_at IS NOT NULL AND expires_at < NOW()
+");
+
 // Fetch all open loans (Borrowed + Overdue) with a live fine for late ones
 $now = date('Y-m-d H:i:s');
 
@@ -49,11 +55,14 @@ foreach ($active_loans as $loan) {
     }
 }
 
+
+
 // Active reservations grouped by book, with the waiting line in order
+// Each queue entry is "reservation_id::Full Name" so every person can be cancelled individually
 $res_rows = $pdo->query("
     SELECT b.book_id, b.title, b.available_copies,
            COUNT(r.reservation_id) AS waiting,
-           GROUP_CONCAT(CONCAT(m.firstname, ' ', m.lastname)
+           GROUP_CONCAT(CONCAT(r.reservation_id, '::', m.firstname, ' ', m.lastname)
                         ORDER BY r.reservation_id SEPARATOR '||') AS queue
     FROM reservations r
     JOIN books b ON r.book_id = b.book_id
@@ -110,7 +119,7 @@ foreach ($res_rows as $row) {
     <div class="container">
         <a class="navbar-brand" href="homepage.php">
             <div class="logo-box"><i class="bi bi-book-half"></i></div>
-            CLMS Admin
+            Community Library Management System
         </a>
         <button class="navbar-toggler border-0 text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
@@ -120,7 +129,13 @@ foreach ($res_rows as $row) {
                 <li class="nav-item"><a class="nav-link" href="homepage.php">Home</a></li>
                 <li class="nav-item"><a class="nav-link" href="catalog.php">Catalog</a></li>
                 <li class="nav-item"><a class="nav-link active" href="admin_dashboard.php">Admin Panel</a></li>
-                <li class="nav-item ms-lg-3"><a class="btn btn-danger text-white fw-semibold px-4 rounded-pill" href="logout.php">Logout</a></li>
+                <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                    <a class="btn fw-semibold px-4 rounded-pill" 
+                    style="background-color: transparent; border: 1.5px solid white; color: white; transition: all 0.2s;" 
+                    onmouseover="this.style.backgroundColor='var(--accent-green)'; this.style.borderColor='var(--accent-green)'; this.style.color='var(--primary-green)';" 
+                    onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='white'; this.style.color='white';" 
+                    href="logout.php">Logout</a>
+                </li>
             </ul>
         </div>
     </div>
@@ -136,6 +151,9 @@ foreach ($res_rows as $row) {
             </a>
             <a href="add_book.php" class="btn btn-outline-success">
                 <i class="bi bi-plus-lg"></i> Add New Book
+            </a>
+            <a href="admin_report.php" class="btn btn-outline-success">
+                <i class="bi bi-printer"></i> Print Report
             </a>
         </div>
     </div>
@@ -248,9 +266,22 @@ foreach ($res_rows as $row) {
                                 </td>
                                 <td><span class="badge bg-warning text-dark fs-6"><?= (int) $row['waiting']; ?></span></td>
                                 <td>
-                                    <ol class="mb-0 ps-3 small">
-                                        <?php foreach ($names as $name): ?>
-                                            <li><?= htmlspecialchars($name); ?></li>
+                                    <ol class="mb-0 ps-3" style="min-width: 280px;">
+                                        <?php foreach ($names as $entry): ?>
+                                            <?php [$reservation_id, $name] = explode('::', $entry, 2); ?>
+                                            <li>
+                                                <div class="d-flex justify-content-between align-items-center gap-3 py-1">
+                                                    <span><?= htmlspecialchars($name); ?></span>
+                                                    <form action="reserve_process.php" method="POST" class="m-0"
+                                                          onsubmit="return confirm(<?= htmlspecialchars(json_encode('Cancel the reservation for ' . $name . '?'), ENT_QUOTES); ?>);">
+
+                                                        <input type="hidden" name="action" value="cancel">
+                                                        <input type="hidden" name="from" value="admin_dashboard">
+                                                        <input type="hidden" name="reservation_id" value="<?= (int) $reservation_id; ?>">
+                                                        <button type="submit" class="btn btn-outline-danger btn-sm">Cancel</button>
+                                                    </form>
+                                                </div>
+                                            </li>
                                         <?php endforeach; ?>
                                     </ol>
                                 </td>

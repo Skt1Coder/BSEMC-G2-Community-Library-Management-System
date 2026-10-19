@@ -21,10 +21,6 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
-// CSRF check
-if (!hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf'] ?? '')) {
-    die('Invalid request.');
-}
 
 $member_id = (int) $_SESSION['member_id'];
 $action    = $_POST['action'] ?? '';

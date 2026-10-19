@@ -2,13 +2,6 @@
 session_start();
 require 'includes/db_connect.php';
 
-/*
- * ASSUMPTIONS - rename to match your database:
- *   Table:    members   (member_id, firstname, lastname, email, role_id)
- *   Roles:    1 = Admin, 2 = Resident
- *   Loans:    transaction table + status table ('Borrowed' / 'Overdue' = still out)
- */
-
 // Admins only
 if (!isset($_SESSION['member_id']) || $_SESSION['role_id'] != 1) {
     header("Location: login.php");
@@ -150,7 +143,11 @@ $members = $stmt->fetchAll();
                 <li class="nav-item"><a class="nav-link" href="catalog.php">Catalog</a></li>
                 <li class="nav-item"><a class="nav-link fw-bold" style="color: #dcfce7;" href="admin_dashboard.php">Admin Panel</a></li>
                 <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
-                    <a class="btn btn-danger text-white fw-semibold px-4 rounded-pill" href="logout.php">Logout</a>
+                    <a class="btn fw-semibold px-4 rounded-pill" 
+                    style="background-color: transparent; border: 1.5px solid white; color: white; transition: all 0.2s;" 
+                    onmouseover="this.style.backgroundColor='var(--accent-green)'; this.style.borderColor='var(--accent-green)'; this.style.color='var(--primary-green)';" 
+                    onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='white'; this.style.color='white';" 
+                    href="logout.php">Logout</a>
                 </li>
             </ul>
         </div>

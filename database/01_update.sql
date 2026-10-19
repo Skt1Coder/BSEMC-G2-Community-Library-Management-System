@@ -19,7 +19,11 @@ CREATE TABLE reservations (
     FOREIGN KEY (book_id) REFERENCES books(book_id) ON DELETE CASCADE
 );
 
+SET FOREIGN_KEY_CHECKS = 0;
+DROP TABLE IF EXISTS `reservation`;
+SET FOREIGN_KEY_CHECKS = 1;
 
+ALTER TABLE reservations ADD expires_at DATETIME NULL;
 
 INSERT INTO status (status_id, status) VALUES 
 (1, 'Borrowed'), 

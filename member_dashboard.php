@@ -40,10 +40,7 @@ $stmt->execute([
 ]);
 $transactions = $stmt->fetchAll();
 
-// CSRF token for the Cancel Reservation buttons
-if (empty($_SESSION['csrf'])) {
-    $_SESSION['csrf'] = bin2hex(random_bytes(32));
-}
+
 
 // Active reservations with queue position (people ahead of this member)
 $res_stmt = $pdo->prepare("
@@ -192,7 +189,11 @@ foreach ($transactions as $row) {
                     <a class="nav-link active" href="member_dashboard.php">Dashboard</a>
                 </li>
                 <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
-                    <a class="btn btn-danger text-white fw-semibold px-4 rounded-pill" href="logout.php">Logout</a>
+                    <a class="btn fw-semibold px-4 rounded-pill" 
+                    style="background-color: transparent; border: 1.5px solid white; color: white; transition: all 0.2s;" 
+                    onmouseover="this.style.backgroundColor='var(--accent-green)'; this.style.borderColor='var(--accent-green)'; this.style.color='var(--primary-green)';" 
+                    onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='white'; this.style.color='white';" 
+                    href="logout.php">Logout</a>
                 </li>
             </ul>
         </div>
@@ -311,7 +312,6 @@ foreach ($transactions as $row) {
                                         <?php endif; ?>
                                         <form action="reserve_process.php" method="POST" class="m-0"
                                               onsubmit="return confirm('Cancel this reservation?');">
-                                            <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">
                                             <input type="hidden" name="action" value="cancel">
                                             <input type="hidden" name="from" value="dashboard">
                                             <input type="hidden" name="reservation_id" value="<?= (int) $res['reservation_id']; ?>">

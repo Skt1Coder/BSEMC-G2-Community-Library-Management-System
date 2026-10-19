@@ -11,7 +11,11 @@ if (!isset($_SESSION['member_id']) || $_SESSION['role_id'] != 1) {
     exit();
 }
 
+
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['transaction_id'])) {
+
+    
+
     $transaction_id = (int) $_POST['transaction_id'];
 
     try {
@@ -56,6 +60,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['transaction_id'])) {
             $update_book = $pdo->prepare("UPDATE books SET available_copies = available_copies + 1 WHERE book_id = :book_id");
             $update_book->execute(['book_id' => $book_id]);
 
+            $start_timer = $pdo->prepare("
+                UPDATE reservations 
+                SET expires_at = DATE_ADD(NOW(), INTERVAL 48 HOUR) 
+                WHERE book_id = :book_id AND status = 'Active' AND expires_at IS NULL 
+                ORDER BY reservation_id ASC LIMIT 1
+            ");
+
+            $start_timer->execute(['book_id' => $book_id]);
+
             $pdo->commit();
 
             $_SESSION['success'] = $fine > 0
@@ -70,8 +83,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['transaction_id'])) {
             exit();
         }
     } catch (Exception $e) {
-        $pdo->rollBack();
-        die("System error: " . $e->getMessage());
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        error_log($e->getMessage()); 
+
+        $_SESSION['error'] = "A system error occurred while processing your request.";
+        header("Location: catalog.php"); 
+        exit();
     }
 } else {
     header("Location: admin_dashboard.php");
