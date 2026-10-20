@@ -88,27 +88,37 @@ try {
     } elseif ($action === 'cancel') {
         $reservation_id = (int) ($_POST['reservation_id'] ?? 0);
 
-        // Members can only cancel their own active reservations
-        $stmt = $pdo->prepare("
-            UPDATE reservations SET status = 'Cancelled'
-            WHERE reservation_id = :reservation_id AND member_id = :member_id AND status = 'Active'
-        ");
-        $stmt->execute(['reservation_id' => $reservation_id, 'member_id' => $member_id]);
+        if ($_SESSION['role_id'] == 1) {
+            // Admins can cancel ANY active reservation
+            $stmt = $pdo->prepare("UPDATE reservations SET status = 'Cancelled' WHERE reservation_id = :reservation_id AND status = 'Active'");
+            $stmt->execute(['reservation_id' => $reservation_id]);
+        } else {
+            // Residents can only cancel their OWN active reservations
+            $stmt = $pdo->prepare("UPDATE reservations SET status = 'Cancelled' WHERE reservation_id = :reservation_id AND member_id = :member_id AND status = 'Active'");
+            $stmt->execute(['reservation_id' => $reservation_id, 'member_id' => $member_id]);
+        }
 
         if ($stmt->rowCount() > 0) {
             $_SESSION['success'] = "Reservation cancelled.";
         } else {
             $_SESSION['error'] = "Reservation not found.";
         }
+        
+        // Route Admin back to admin panel
+        if (($_POST['from'] ?? '') === 'admin_dashboard') {
+            $back = 'admin_dashboard.php';
+        }
 
     } else {
         $_SESSION['error'] = "Unknown action.";
     }
 } catch (Exception $e) {
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
-    die("System error: " . $e->getMessage());
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        $_SESSION['error'] = "A system error occurred. Please try again.";
+        header("Location: " . (isset($back) ? $back : "catalog.php"));
+        exit();
 }
 
 header("Location: " . $back);

@@ -105,7 +105,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['book_id'])) {
         if ($pdo->inTransaction()) {
             $pdo->rollBack();
         }
-        die("System error: " . $e->getMessage());
+        $_SESSION['error'] = "A system error occurred. Please try again.";
+        header("Location: " . (isset($back) ? $back : "catalog.php"));
+        exit();
     }
 } else {
     header("Location: catalog.php");

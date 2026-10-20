@@ -240,7 +240,7 @@ if (empty($_SESSION['csrf'])) {
         <div class="col-md-6">
             <!-- Search Form -->
             <form action="catalog.php" method="GET" class="d-flex gap-2">
-                <select name="category_id" class="form-select" style="max-width: 180px;">
+                <select name="category_id" class="form-select" style="max-width: 180px;" onchange="this.form.submit()">
                     <option value="0">All Categories</option>
                     <?php foreach ($categories as $cat): ?>
                         <option value="<?= $cat['category_id']; ?>" <?= $category_filter == $cat['category_id'] ? 'selected' : ''; ?>>
@@ -249,7 +249,7 @@ if (empty($_SESSION['csrf'])) {
                     <?php endforeach; ?>
                 </select>
                 <input type="text" name="search" class="form-control" placeholder="Search by title or author..." value="<?= htmlspecialchars($search_query); ?>">
-                <button type="submit" class="btn btn-success px-4" style="background-color: #14532d;">Filter</button>
+                <button type="submit" class="btn btn-success px-4" style="background-color: #14532d;">Search</button>
                 <?php if ($search_query || $category_filter > 0): ?>
                     <a href="catalog.php" class="btn btn-secondary">Clear</a>
                 <?php endif; ?>
@@ -276,16 +276,27 @@ if (empty($_SESSION['csrf'])) {
                         <p class="text-muted small mb-3">by <?= htmlspecialchars($book['author']); ?></p>
 
                         <div class="mt-auto border-top pt-3 d-flex justify-content-between align-items-center">
-                            <span class="small fw-bold <?= $book['available_copies'] > 0 ? 'text-success' : 'text-danger' ?>">
-                                <?= $book['available_copies']; ?> Available
-                            </span>
-
                             <?php
                                 $bid   = $book['book_id'];
                                 $avail = (int) $book['available_copies'];
                                 $held  = (int) ($res_counts[$bid] ?? 0);
-                                $ahead = isset($my_res[$bid]) ? (int) $my_res[$bid] : null; // null = member has no reservation
+                                $ahead = isset($my_res[$bid]) ? (int) $my_res[$bid] : null; 
+
+                                $free_copies = $avail - $held;
                             ?>
+
+                            <!-- Dynamic Availability Text -->
+                            <?php if ($ahead !== null && $ahead < $avail): ?>
+                                <span class="small fw-bold text-success">Reserved for You</span>
+                            <?php elseif ($avail == 0): ?>
+                                <span class="small fw-bold text-danger">0 Available</span>
+                            <?php elseif ($free_copies > 0): ?>
+                                <span class="small fw-bold text-success"><?= $free_copies; ?> Available</span>
+                            <?php else: ?>
+                                <span class="small fw-bold" style="color: #b45309;">Copy on Hold</span>
+                            <?php endif; ?>
+
+                            <!-- Button Logic -->
                             <?php if (in_array($bid, $borrowed_ids)): ?>
                                 <button class="btn btn-secondary btn-sm" disabled>Already Borrowed</button>
                             <?php elseif ($ahead !== null && $ahead < $avail): ?>

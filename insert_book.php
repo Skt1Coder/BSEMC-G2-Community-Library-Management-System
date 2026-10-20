@@ -70,16 +70,17 @@ try {
 
     // ---------- DELETE ----------
     } elseif ($action === 'delete') {
-        // Block removal if any copy is still out on loan
+        // Block removal if any copy is still out on loan OR reserved
         $check = $pdo->prepare("
-            SELECT COUNT(*) FROM transaction t
-            JOIN status s ON t.status_id = s.status_id
-            WHERE t.book_id = :book_id AND s.status IN ('Borrowed', 'Overdue')
+            SELECT 
+                (SELECT COUNT(*) FROM transaction t JOIN status s ON t.status_id = s.status_id WHERE t.book_id = :book_id AND s.status IN ('Borrowed', 'Overdue')) +
+                (SELECT COUNT(*) FROM reservations r WHERE r.book_id = :book_id AND r.status = 'Active') 
+            AS active_links
         ");
         $check->execute(['book_id' => $book_id]);
 
         if ($check->fetchColumn() > 0) {
-            $_SESSION['error'] = "This book can't be removed while copies are still borrowed.";
+            $_SESSION['error'] = "This book can't be removed while copies are borrowed or reserved.";
         } else {
             try {
                 $stmt = $pdo->prepare("DELETE FROM books WHERE book_id = :book_id");
