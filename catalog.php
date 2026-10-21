@@ -2,6 +2,11 @@
 session_start();
 require 'includes/db_connect.php';
 
+// CSRF token
+if (empty($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+
 $search_query = isset($_GET['search']) ? trim($_GET['search']) : '';
 $category_filter = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 
@@ -9,7 +14,7 @@ $category_filter = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 $cat_stmt = $pdo->query("SELECT category_id, category FROM category ORDER BY category ASC");
 $categories = $cat_stmt->fetchAll();
 
-// Dynamically build the search query
+// search query
 $query = "SELECT b.book_id, b.title, b.author, b.available_copies, c.category
           FROM books b
           JOIN category c ON b.category_id = c.category_id
@@ -62,10 +67,7 @@ if (isset($_SESSION['member_id'])) {
     $my_res = $r->fetchAll(PDO::FETCH_KEY_PAIR);
 }
 
-// CSRF token for the Reserve buttons
-if (empty($_SESSION['csrf'])) {
-    $_SESSION['csrf'] = bin2hex(random_bytes(32));
-}
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -285,7 +287,7 @@ if (empty($_SESSION['csrf'])) {
                                 $free_copies = $avail - $held;
                             ?>
 
-                            <!-- Dynamic Availability Text -->
+                            <!-- Availability Indicators -->
                             <?php if ($ahead !== null && $ahead < $avail): ?>
                                 <span class="small fw-bold text-success">Reserved for You</span>
                             <?php elseif ($avail == 0): ?>
@@ -296,11 +298,13 @@ if (empty($_SESSION['csrf'])) {
                                 <span class="small fw-bold" style="color: #b45309;">Copy on Hold</span>
                             <?php endif; ?>
 
-                            <!-- Button Logic -->
+                            <!-- Borrow and Reserve -->
                             <?php if (in_array($bid, $borrowed_ids)): ?>
                                 <button class="btn btn-secondary btn-sm" disabled>Already Borrowed</button>
                             <?php elseif ($ahead !== null && $ahead < $avail): ?>
-                                <form action="borrow_process.php" method="POST" class="m-0">                                
+                                <form action="borrow_process.php" method="POST" class="m-0">
+                                    <!-- csrf -->
+                                    <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">                                
                                     <input type="hidden" name="book_id" value="<?= $bid; ?>">
                                     <button type="submit" class="btn btn-success btn-sm">Borrow (reserved)</button>
                                 </form>
@@ -308,11 +312,15 @@ if (empty($_SESSION['csrf'])) {
                                 <span class="badge bg-info text-dark">Reserved &middot; #<?= $ahead + 1; ?> in line</span>
                             <?php elseif ($avail > $held): ?>
                                 <form action="borrow_process.php" method="POST" class="m-0">
+                                    <!-- csrf -->
+                                    <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">  
                                     <input type="hidden" name="book_id" value="<?= $bid; ?>">
                                     <button type="submit" class="btn btn-outline-success btn-sm">Borrow</button>
                                 </form>
                             <?php else: ?>
                                 <form action="reserve_process.php" method="POST" class="m-0">
+                                    <!-- csrf -->
+                                    <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">  
                                     <input type="hidden" name="action" value="reserve">
                                     <input type="hidden" name="book_id" value="<?= $bid; ?>">
                                     <button type="submit" class="btn btn-outline-warning btn-sm">Reserve</button>

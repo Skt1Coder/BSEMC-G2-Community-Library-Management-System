@@ -8,8 +8,17 @@ if (!isset($_SESSION['member_id'])) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['book_id'])) {
+    
+    // csrf
+    if (!hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf'] ?? '')) {
+        $_SESSION['error'] = "Invalid security token. Please refresh the page and try again.";
+        header("Location: catalog.php"); 
+        exit();
+    }
+
     $book_id = (int) $_POST['book_id'];
     $member_id = (int) $_SESSION['member_id'];
+
 
     try {
         $pdo->beginTransaction();
@@ -19,7 +28,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['book_id'])) {
         $stmt->execute(['book_id' => $book_id]);
         $book = $stmt->fetch();
 
-        // Rule 1: only one copy of the same book per member (Borrowed or Overdue)
+        // Ensure only one copy of the same book per member (Borrowed or Overdue)
         $check = $pdo->prepare("
             SELECT COUNT(*) FROM transaction t
             JOIN status s ON t.status_id = s.status_id
@@ -44,7 +53,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['book_id'])) {
 
         $available = (int) $book['available_copies'];
 
-        // Rule 2: free copies are held for people waiting in the reservation line
+        // Ensure that free copies are held for people waiting in the reservation line
         $held_stmt = $pdo->prepare("SELECT COUNT(*) FROM reservations WHERE book_id = :book_id AND status = 'Active'");
         $held_stmt->execute(['book_id' => $book_id]);
         $held = (int) $held_stmt->fetchColumn();

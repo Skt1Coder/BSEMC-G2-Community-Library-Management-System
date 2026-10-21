@@ -2,13 +2,6 @@
 session_start();
 require 'includes/db_connect.php';
 
-/*
- * Handles two actions from forms:
- *   reserve - join the waiting line for a book that has no free copies
- *   cancel  - leave the waiting line
- *
- * Needs the `reservations` table (see reservations.sql).
- */
 
 // Must be logged in
 if (!isset($_SESSION['member_id'])) {
@@ -21,6 +14,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
+// csrf
+if (!hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf'] ?? '')) {
+    $_SESSION['error'] = "Invalid security token. Please refresh the page and try again.";
+    header("Location: catalog.php"); 
+    exit();
+}
 
 $member_id = (int) $_SESSION['member_id'];
 $action    = $_POST['action'] ?? '';
@@ -41,7 +40,7 @@ try {
         if (!$book) {
             $_SESSION['error'] = "That book doesn't exist.";
         } else {
-            // Does the member already have this book?
+            // check if the member has this Book
             $loan = $pdo->prepare("
                 SELECT COUNT(*) FROM transaction t
                 JOIN status s ON t.status_id = s.status_id
@@ -50,14 +49,14 @@ try {
             ");
             $loan->execute(['member_id' => $member_id, 'book_id' => $book_id]);
 
-            // Already in line?
+            // check if already in line
             $existing = $pdo->prepare("
                 SELECT COUNT(*) FROM reservations
                 WHERE member_id = :member_id AND book_id = :book_id AND status = 'Active'
             ");
             $existing->execute(['member_id' => $member_id, 'book_id' => $book_id]);
 
-            // How many people are waiting for this book?
+            // check how many people are waiting for this book
             $held_stmt = $pdo->prepare("SELECT COUNT(*) FROM reservations WHERE book_id = :book_id AND status = 'Active'");
             $held_stmt->execute(['book_id' => $book_id]);
             $held = (int) $held_stmt->fetchColumn();
@@ -89,7 +88,7 @@ try {
         $reservation_id = (int) ($_POST['reservation_id'] ?? 0);
 
         if ($_SESSION['role_id'] == 1) {
-            // Admins can cancel ANY active reservation
+            // Admins cancellation reservation for all members (included admin)
             $stmt = $pdo->prepare("UPDATE reservations SET status = 'Cancelled' WHERE reservation_id = :reservation_id AND status = 'Active'");
             $stmt->execute(['reservation_id' => $reservation_id]);
         } else {
@@ -104,7 +103,7 @@ try {
             $_SESSION['error'] = "Reservation not found.";
         }
         
-        // Route Admin back to admin panel
+        // route to back to admin panel if error
         if (($_POST['from'] ?? '') === 'admin_dashboard') {
             $back = 'admin_dashboard.php';
         }

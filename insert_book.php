@@ -13,6 +13,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     exit();
 }
 
+// csrf
+if (!hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf'] ?? '')) {
+    $_SESSION['error'] = "Invalid security token. Please refresh the page and try again.";
+    header("Location: add_book.php"); 
+    exit();
+}
+
 
 $action  = $_POST['action'] ?? '';
 $book_id = (int) ($_POST['book_id'] ?? 0);

@@ -344,7 +344,7 @@ try {
             </div>
             
             <div class="row g-4 justify-content-center">
-                <!-- Card 1: Dynamic Library Collection Stats -->
+                <!-- Card 1 -->
                 <div class="col-12 col-md-6 col-lg-3">
                     <div class="card feature-card h-100 p-4">
                         <div class="card-body p-0 d-flex flex-column">
@@ -367,7 +367,7 @@ try {
                     </div>
                 </div>
 
-                <!-- Card 2: Live New Arrivals -->
+                <!-- Card 2 -->
                 <div class="col-12 col-md-6 col-lg-3">
                     <div class="card feature-card h-100 p-4">
                         <div class="card-body p-0 d-flex flex-column">
@@ -394,7 +394,7 @@ try {
                     </div>
                 </div>
 
-                <!-- Card 3: Dynamic Contextual Action Card -->
+                <!-- Card 3 -->
                 <div class="col-12 col-md-6 col-lg-3">
                     <div class="card feature-card h-100 p-4">
                         <div class="card-body p-0 d-flex flex-column">
@@ -423,7 +423,7 @@ try {
                     </div>
                 </div>
 
-                <!-- Card 4: Real System Rules & Policy -->
+                <!-- Card 4 -->
                 <div class="col-12 col-md-6 col-lg-3">
                     <div class="card feature-card h-100 p-4">
                         <div class="card-body p-0 d-flex flex-column">

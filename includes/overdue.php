@@ -1,8 +1,4 @@
 <?php
-/*
- * Shared overdue + fine settings.
- * Include with: require 'includes/overdue.php';
- */
 
 // Fine in pesos, per overdue day, per book
 if (!defined('FINE_PER_DAY')) {

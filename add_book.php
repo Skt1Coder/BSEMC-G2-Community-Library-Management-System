@@ -2,6 +2,10 @@
 session_start();
 require 'includes/db_connect.php';
 
+if (empty($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+
 // Admins only
 if (!isset($_SESSION['member_id']) || $_SESSION['role_id'] != 1) {
     header("Location: login.php");
@@ -126,7 +130,9 @@ $books = $stmt->fetchAll();
         </h5>
 
         <form action="insert_book.php" method="POST">
+            <!-- csrf -->
             <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">
+            
             <input type="hidden" name="action" value="<?= $edit_book ? 'update' : 'add'; ?>">
             <?php if ($edit_book): ?>
                 <input type="hidden" name="book_id" value="<?= (int) $edit_book['book_id']; ?>">
@@ -216,6 +222,7 @@ $books = $stmt->fetchAll();
                                         </a>
                                         <form action="insert_book.php" method="POST" class="m-0"
                                               onsubmit="return confirm('Remove this book from the catalog? This cannot be undone.');">
+                                            <!-- csrf -->
                                             <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">
                                             <input type="hidden" name="action" value="delete">
                                             <input type="hidden" name="book_id" value="<?= (int) $book['book_id']; ?>">

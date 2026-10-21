@@ -3,6 +3,11 @@ session_start();
 require 'includes/db_connect.php';
 require 'includes/overdue.php';
 
+// CSRF token
+if (empty($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+
 // SECURITY: Kick out anyone who is not logged in OR is not a Resident (role_id 2)
 if (!isset($_SESSION['member_id']) || $_SESSION['role_id'] != 2) {
     header("Location: login.php");
@@ -170,8 +175,7 @@ foreach ($transactions as $row) {
             <div class="logo-box"><i class="bi bi-book-half"></i></div>
             Community Library Management System
         </a>
-        
-        <!-- Mobile Toggle Button -->
+
         <button class="navbar-toggler border-0 shadow-none text-white" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
         </button>
@@ -312,6 +316,8 @@ foreach ($transactions as $row) {
                                         <?php endif; ?>
                                         <form action="reserve_process.php" method="POST" class="m-0"
                                               onsubmit="return confirm('Cancel this reservation?');">
+                                            <!-- csrf -->
+                                            <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">  
                                             <input type="hidden" name="action" value="cancel">
                                             <input type="hidden" name="from" value="dashboard">
                                             <input type="hidden" name="reservation_id" value="<?= (int) $res['reservation_id']; ?>">

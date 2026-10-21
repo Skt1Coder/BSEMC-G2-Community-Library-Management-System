@@ -3,13 +3,18 @@ session_start();
 require 'includes/db_connect.php';
 require 'includes/overdue.php';
 
+// CSRF token
+if (empty($_SESSION['csrf'])) {
+    $_SESSION['csrf'] = bin2hex(random_bytes(32));
+}
+
 // STRICT SECURITY: Kick out anyone who is NOT an Admin (role_id 1)
 if (!isset($_SESSION['member_id']) || $_SESSION['role_id'] != 1) {
     header("Location: catalog.php");
     exit();
 }
 
-// Flip any past-due loans from 'Borrowed' to 'Overdue'
+// Flip past-due loans from 'Borrowed' to 'Overdue'
 update_overdue_statuses($pdo);
 
 $pdo->query("
@@ -56,7 +61,6 @@ foreach ($active_loans as $loan) {
 }
 
 
-
 // Active reservations grouped by book, with the waiting line in order
 // Each queue entry is "reservation_id::Full Name" so every person can be cancelled individually
 $res_rows = $pdo->query("
@@ -101,7 +105,7 @@ foreach ($res_rows as $row) {
         body { font-family: 'Inter', sans-serif; background-color: var(--light-bg); color: var(--text-main); }
         h1, h2, h3, h4, h5, .navbar-brand { font-family: 'Outfit', sans-serif; }
 
-        /* Solid Green Navbar */
+        /* Navbar Desings */
         .navbar { background-color: var(--primary-green) !important; border-bottom: 1px solid rgba(0,0,0,0.1); padding: 1rem 0; }
         .navbar-brand { display: flex; align-items: center; gap: 12px; font-weight: 800; color: white !important; font-size: 1.25rem; }
         .logo-box { width: 40px; height: 40px; background: white; color: var(--primary-green); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
@@ -228,6 +232,8 @@ foreach ($res_rows as $row) {
                                 </td>
                                 <td>
                                     <form action="return_process.php" method="POST" class="m-0">
+                                        <!-- csrf -->
+                                        <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">  
                                         <input type="hidden" name="transaction_id" value="<?= (int) $loan['transaction_id']; ?>">
                                         <button type="submit" class="btn btn-success btn-sm">Mark Returned</button>
                                     </form>
@@ -273,8 +279,9 @@ foreach ($res_rows as $row) {
                                                 <div class="d-flex justify-content-between align-items-center gap-3 py-1">
                                                     <span><?= htmlspecialchars($name); ?></span>
                                                     <form action="reserve_process.php" method="POST" class="m-0"
-                                                          onsubmit="return confirm(<?= htmlspecialchars(json_encode('Cancel the reservation for ' . $name . '?'), ENT_QUOTES); ?>);">
-
+                                                        onsubmit="return confirm(<?= htmlspecialchars(json_encode('Cancel the reservation for ' . $name . '?'), ENT_QUOTES); ?>);">
+                                                        <!-- csrf -->
+                                                        <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">  
                                                         <input type="hidden" name="action" value="cancel">
                                                         <input type="hidden" name="from" value="admin_dashboard">
                                                         <input type="hidden" name="reservation_id" value="<?= (int) $reservation_id; ?>">

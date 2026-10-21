@@ -133,7 +133,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             position: relative;
         }
 
-        /* Abstract shapes matching the landing page */
+        /* Abstract Designs */
         .auth-sidebar::before {
             content: '';
             position: absolute;
@@ -209,7 +209,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="col-12">
                 <div class="auth-card d-flex flex-column flex-lg-row">
                     
-                    <!-- Left Sidebar (Branding) -->
+                    <!-- Left Sidebar -->
                     <div class="col-lg-5 auth-sidebar d-none d-lg-flex">
                         <div style="position: relative; z-index: 10;">
                             <div class="d-inline-flex align-items-center justify-content-center bg-white text-success rounded-3 mb-4" style="width: 50px; height: 50px; font-size: 1.5rem;">
@@ -248,7 +248,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email Address</label>
-                                <!-- type="email" ensures the user includes an '@' symbol -->
+                                <!-- ensures the user includes an '@' symbol -->
                                 <input type="email" class="form-control" id="email" name="email" placeholder="juan@example.com" required>
                             </div>
 
@@ -259,7 +259,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                             <div class="mb-4">
                                 <label for="password" class="form-label">Password</label>
-                                <!-- minlength ensures they cannot create a 1-character password -->
+                                <!-- ensures they cannot create a 1-character password -->
                                 <input type="password" class="form-control" id="password" name="password" placeholder="Create a strong password" minlength="8" required>
                                 <div class="form-text mt-2"><i class="bi bi-info-circle me-1"></i>Must be at least 8 characters long.</div>
                             </div>

@@ -200,7 +200,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="col-12">
                 <div class="auth-card d-flex flex-column flex-lg-row">
                     
-                    <!-- Left Sidebar (Branding) -->
+                    <!-- Left Sidebar -->
                     <div class="col-lg-5 auth-sidebar d-none d-lg-flex">
                         <div style="position: relative; z-index: 10;">
                             <div class="d-inline-flex align-items-center justify-content-center bg-white text-success rounded-3 mb-4" style="width: 50px; height: 50px; font-size: 1.5rem;">

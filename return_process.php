@@ -14,7 +14,12 @@ if (!isset($_SESSION['member_id']) || $_SESSION['role_id'] != 1) {
 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['transaction_id'])) {
 
-    
+    // csrf
+    if (!hash_equals($_SESSION['csrf'] ?? '', $_POST['csrf'] ?? '')) {
+        $_SESSION['error'] = "Invalid security token. Please refresh the page and try again.";
+        header("Location: admin_dashboard.php"); 
+        exit();
+    }
 
     $transaction_id = (int) $_POST['transaction_id'];
 

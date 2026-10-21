@@ -3,10 +3,10 @@
 $host = 'localhost';
 $dbname = 'library_db';
 $username = 'root'; // Default XAMPP username
-$password = ''; // Default XAMPP password is empty
+$password = ''; // Default XAMPP password (currently empty)
 
 try {
-    // PDO is used here to prevent SQL injection, matching your professor's checklist
+    // PDO
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
     
     // Forces PHP to display detailed errors if a database query fails
