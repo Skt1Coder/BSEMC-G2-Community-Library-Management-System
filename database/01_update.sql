@@ -30,3 +30,6 @@ INSERT INTO status (status_id, status) VALUES
 (2, 'Returned'), 
 (3, 'Overdue')
 ON DUPLICATE KEY UPDATE status=status;
+
+
+ALTER TABLE books ADD COLUMN cover_image VARCHAR(255) DEFAULT NULL;
