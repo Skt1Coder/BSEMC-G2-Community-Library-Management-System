@@ -20,7 +20,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     if ($user && password_verify($password, $user['password'])) {
 
         $_SESSION['member_id'] = $user['member_id'];
-        $_SESSION['role_id'] = $user['role_id'];
+        $_SESSION['role_id']   = $user['role_id'];
         $_SESSION['firstname'] = $user['firstname'];
 
         if ($user['role_id'] == 1) {
@@ -30,7 +30,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
         exit(); 
     } else {
-        $message = "<div class='alert alert-danger'>Invalid email or password.</div>";
+        $message = "<div class='alert alert-danger custom-alert alert-dismissible fade show mb-4' role='alert'><i class='bi bi-exclamation-triangle-fill me-2'></i>Invalid email or password.<button type='button' class='btn-close' data-bs-dismiss='alert'></button></div>";
     }
 }
 ?>
@@ -49,17 +49,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <!-- Google Fonts: Inter & Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            /* Matching our exact theme */
-            --primary-green: #14532d;
+            --primary-green: #0f392b;
+            --primary-light: #15803d;
             --primary-hover: #166534;
             --accent-green: #dcfce7;
-            --light-bg: #fafaf9;
-            --text-main: #292524;
-            --text-muted: #78716c;
+            --accent-emerald: #10b981;
+            --dark-bg: #111827;
+            --light-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: rgba(226, 232, 240, 0.8);
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
         }
 
         body {
@@ -68,418 +74,392 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+        }
+
+        h1, h2, h3, h4, h5, .navbar-brand { 
+            font-family: 'Outfit', sans-serif; 
+        }
+
+        /* --- Navbar --- */
+        .navbar {
+            background: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.85rem 0;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 800;
+            color: var(--primary-green) !important;
+            font-size: 1.2rem;
+            letter-spacing: -0.3px;
+        }
+        
+        .logo-box {
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--primary-green), var(--accent-emerald));
+            color: white;
+            border-radius: 12px;
+            display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem 0;
+            font-size: 1.25rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+            flex-shrink: 0;
         }
 
-        /* Background Image */
-        body::before {
-            content: '';
-            position: fixed;
-            inset: 0;
-            z-index: -2;
-            background-image: url("data:image/svg+xml,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22%20width=%22960%22%20height=%22260%22%20viewBox=%220%200%20960%20260%22%3E%3Crect%20x=%220%22%20y=%22107%22%20width=%2230%22%20height=%22139%22%20rx=%222%22%20fill=%22%23d6d3d1%22/%3E%3Crect%20x=%220%22%20y=%22129%22%20width=%2230%22%20height=%224%22%20fill=%22%23dcfce7%22%20opacity=%22.7%22/%3E%3Crect%20x=%229.0%22%20y=%22165%22%20width=%2212.0%22%20height=%2219%22%20rx=%221%22%20fill=%22%23dcfce7%22%20opacity=%22.45%22/%3E%3Crect%20x=%2230%22%20y=%22115%22%20width=%2222%22%20height=%22131%22%20rx=%222%22%20fill=%22%23d6d3d1%22/%3E%3Crect%20x=%2230%22%20y=%22130%22%20width=%2222%22%20height=%224%22%20fill=%22%23e7e5e4%22%20opacity=%22.7%22/%3E%3Crect%20x=%2252%22%20y=%22111%22%20width=%2240%22%20height=%22135%22%20rx=%222%22%20fill=%22%233f6212%22/%3E%3Crect%20x=%2252%22%20y=%22131%22%20width=%2240%22%20height=%224%22%20fill=%22%23dcfce7%22%20opacity=%22.7%22/%3E%3Crect%20x=%2264.0%22%20y=%22158%22%20width=%2216.0%22%20height=%2219%22%20rx=%221%22%20fill=%22%23dcfce7%22%20opacity=%22.45%22/%3E%3Crect%20x=%2292%22%20y=%2273%22%20width=%2230%22%20height=%22173%22%20rx=%222%22%20fill=%22%2315803d%22/%3E%3Crect%20x=%2292%22%20y=%2295%22%20width=%2230%22%20height=%224%22%20fill=%22%23dcfce7%22%20opacity=%22.7%22/%3E%3Crect%20x=%22122%22%20y=%2252%22%20width=%2222%22%20height=%22194%22%20rx=%222%22%20fill=%22%2386efac%22/%3E%3Crect%20x=%22122%22%20y=%2274%22%20width=%2222%22%20height=%224%22%20fill=%22%23fafaf9%22%20opacity=%22.7%22/%3E%3Crect%20x=%22144%22%20y=%22100%22%20width=%2240%22%20height=%22146%22%20rx=%222%22%20fill=%22%2378716c%22/%3E%3Crect%20x=%22156.0%22%20y=%22169%22%20width=%2216.0%22%20height=%2232%22%20rx=%221%22%20fill=%22%23e7e5e4%22%20opacity=%22.45%22/%3E%3Crect%20x=%22186%22%20y=%2295%22%20width=%2230%22%20height=%22151%22%20rx=%222%22%20fill=%22%2315803d%22/%3E%3Crect%20x=%22186%22%20y=%22113%22%20width=%2230%22%20height=%224%22%20fill=%22%23fafaf9%22%20opacity=%22.7%22/%3E%3Crect%20x=%22218%22%20y=%2269%22%20width=%2246%22%20height=%22177%22%20rx=%222%22%20fill=%22%234d7c0f%22/%3E%3Crect%20x=%22218%22%20y=%2289%22%20width=%2246%22%20height=%224%22%20fill=%22%23dcfce7%22%20opacity=%22.7%22/%3E%3Crect%20x=%22231.8%22%20y=%22119%22%20width=%2218.4%22%20height=%2222%22%20rx=%221%22%20fill=%22%23dcfce7%22%20opacity=%22.45%22/%3E%3Crect%20x=%22267%22%20y=%22121%22%20width=%2234%22%20height=%22125%22%20rx=%222%22%20fill=%22%2357534e%22/%3E%3Crect%20x=%22303%22%20y=%2238%22%20width=%2230%22%20height=%22208%22%20rx=%222%22%20fill=%22%23a8a29e%22/%3E%3Crect%20x=%22303%22%20y=%2259%22%20width=%2230%22%20height=%224%22%20fill=%22%23e7e5e4%22%20opacity=%22.7%22/%3E%3Crect%20x=%22312.0%22%20y=%2280%22%20width=%2212.0%22%20height=%2226%22%20rx=%221%22%20fill=%22%23e7e5e4%22%20opacity=%22.45%22/%3E%3Crect%20x=%22336%22%20y=%2241%22%20width=%2246%22%20height=%22205%22%20rx=%222%22%20fill=%22%23166534%22/%3E%3Crect%20x=%22349.8%22%20y=%2299%22%20width=%2218.4%22%20height=%2232%22%20rx=%221%22%20fill=%22%23dcfce7%22%20opacity=%22.45%22/%3E%3Crect%20x=%22384%22%20y=%2277%22%20width=%2246%22%20height=%22169%22%20rx=%222%22%20fill=%22%2357534e%22/%3E%3Crect%20x=%22384%22%20y=%2298%22%20width=%2246%22%20height=%224%22%20fill=%22%23bbf7d0%22%20opacity=%22.7%22/%3E%3Crect%20x=%22397.8%22%20y=%22136%22%20width=%2218.4%22%20height=%2221%22%20rx=%221%22%20fill=%22%23bbf7d0%22%20opacity=%22.45%22/%3E%3Crect%20x=%22433%22%20y=%2299%22%20width=%2222%22%20height=%22147%22%20rx=%222%22%20fill=%22%234d7c0f%22/%3E%3Crect%20x=%22439.6%22%20y=%22168%22%20width=%228.8%22%20height=%2233%22%20rx=%221%22%20fill=%22%23fafaf9%22%20opacity=%22.45%22/%3E%3Crect%20x=%22455%22%20y=%2269%22%20width=%2226%22%20height=%22177%22%20rx=%222%22%20fill=%22%23d6d3d1%22/%3E%3Crect%20x=%22483%22%20y=%2273%22%20width=%2246%22%20height=%22173%22%20rx=%222%22%20fill=%22%23a8a29e%22/%3E%3Crect%20x=%22496.8%22%20y=%22118%22%20width=%2218.4%22%20height=%2222%22%20rx=%221%22%20fill=%22%23e7e5e4%22%20opacity=%22.45%22/%3E%3Crect%20x=%22529%22%20y=%2297%22%20width=%2246%22%20height=%22149%22%20rx=%222%22%20fill=%22%2314532d%22/%3E%3Crect%20x=%22542.8%22%20y=%22146%22%20width=%2218.4%22%20height=%2218%22%20rx=%221%22%20fill=%22%23e7e5e4%22%20opacity=%22.45%22/%3E%3Crect%20x=%22575%22%20y=%2258%22%20width=%2234%22%20height=%22188%22%20rx=%222%22%20fill=%22%23a8a29e%22/%3E%3Crect%20x=%22609%22%20y=%2239%22%20width=%2234%22%20height=%22207%22%20rx=%222%22%20fill=%22%23bbf7d0%22/%3E%3Crect%20x=%22609%22%20y=%2259%22%20width=%2234%22%20height=%224%22%20fill=%22%23e7e5e4%22%20opacity=%22.7%22/%3E%3Crect%20x=%22619.2%22%20y=%2299%22%20width=%2213.6%22%20height=%2230%22%20rx=%221%22%20fill=%22%23e7e5e4%22%20opacity=%22.45%22/%3E%3Crect%20x=%22643%22%20y=%22118%22%20width=%2226%22%20height=%22128%22%20rx=%222%22%20fill=%22%233f6212%22/%3E%3Crect%20x=%22643%22%20y=%22137%22%20width=%2226%22%20height=%224%22%20fill=%22%23e7e5e4%22%20opacity=%22.7%22/%3E%3Crect%20x=%22669%22%20y=%2254%22%20width=%2222%22%20height=%22192%22%20rx=%222%22%20fill=%22%2315803d%22/%3E%3Crect%20x=%22691%22%20y=%2248%22%20width=%2226%22%20height=%22198%22%20rx=%222%22%20fill=%22%23d6d3d1%22/%3E%3Crect%20x=%22691%22%20y=%2267%22%20width=%2226%22%20height=%224%22%20fill=%22%23fafaf9%22%20opacity=%22.7%22/%3E%3Crect%20x=%22720%22%20y=%22112%22%20width=%2222%22%20height=%22134%22%20rx=%222%22%20fill=%22%2378716c%22/%3E%3Crect%20x=%22720%22%20y=%22130%22%20width=%2222%22%20height=%224%22%20fill=%22%23e7e5e4%22%20opacity=%22.7%22/%3E%3Crect%20x=%22726.6%22%20y=%22155%22%20width=%228.8%22%20height=%2228%22%20rx=%221%22%20fill=%22%23e7e5e4%22%20opacity=%22.45%22/%3E%3Crect%20x=%22744%22%20y=%2238%22%20width=%2234%22%20height=%22208%22%20rx=%222%22%20fill=%22%2315803d%22/%3E%3Crect%20x=%22744%22%20y=%2260%22%20width=%2234%22%20height=%224%22%20fill=%22%23dcfce7%22%20opacity=%22.7%22/%3E%3Crect%20x=%22754.2%22%20y=%22100%22%20width=%2213.6%22%20height=%2218%22%20rx=%221%22%20fill=%22%23dcfce7%22%20opacity=%22.45%22/%3E%3Crect%20x=%22780%22%20y=%22115%22%20width=%2246%22%20height=%22131%22%20rx=%222%22%20fill=%22%234d7c0f%22/%3E%3Crect%20x=%22793.8%22%20y=%22162%22%20width=%2218.4%22%20height=%2234%22%20rx=%221%22%20fill=%22%23bbf7d0%22%20opacity=%22.45%22/%3E%3Crect%20x=%22828%22%20y=%2298%22%20width=%2246%22%20height=%22148%22%20rx=%222%22%20fill=%22%2386efac%22/%3E%3Crect%20x=%22874%22%20y=%2260%22%20width=%2226%22%20height=%22186%22%20rx=%222%22%20fill=%22%2378716c%22/%3E%3Crect%20x=%22902%22%20y=%2293%22%20width=%2234%22%20height=%22153%22%20rx=%222%22%20fill=%22%233f6212%22/%3E%3Crect%20x=%22902%22%20y=%22118%22%20width=%2234%22%20height=%224%22%20fill=%22%23bbf7d0%22%20opacity=%22.7%22/%3E%3Crect%20x=%22938%22%20y=%2298%22%20width=%2222%22%20height=%22148%22%20rx=%222%22%20fill=%22%23166534%22/%3E%3Crect%20x=%22938%22%20y=%22117%22%20width=%2222%22%20height=%224%22%20fill=%22%23fafaf9%22%20opacity=%22.7%22/%3E%3Crect%20x=%22944.6%22%20y=%22157%22%20width=%228.8%22%20height=%2218%22%20rx=%221%22%20fill=%22%23fafaf9%22%20opacity=%22.45%22/%3E%3Crect%20x=%220%22%20y=%22246%22%20width=%22960%22%20height=%2214%22%20fill=%22%2344403c%22/%3E%3Crect%20x=%220%22%20y=%22246%22%20width=%22960%22%20height=%223%22%20fill=%22%2378716c%22/%3E%3C/svg%3E");
-            background-size: 960px 260px;
-            background-repeat: repeat;
-            background-position: center bottom;
-            opacity: 0.4;
+        .nav-link {
+            color: var(--text-main) !important;
+            font-weight: 500;
+            font-size: 0.95rem;
+            padding: 0.5rem 1.1rem !important;
+            transition: all 0.25s ease;
+            border-radius: 50px;
         }
 
-        body::after {
-            content: '';
-            position: fixed;
-            inset: 0;
-            z-index: -1;
-            background:
-                radial-gradient(ellipse at center,
-                    rgba(250, 250, 249, 0.92) 0%,
-                    rgba(250, 250, 249, 0.75) 45%,
-                    rgba(250, 250, 249, 0.45) 100%);
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary-light) !important;
+            background-color: var(--accent-green);
         }
 
-        h2, h3 {
-            font-family: 'Outfit', sans-serif;
-            font-weight: 700;
+        /* --- Main Content Layout --- */
+        .auth-wrapper {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 50px 20px;
+            background: radial-gradient(circle at 50% 0%, rgba(16, 185, 129, 0.08) 0%, rgba(248, 250, 252, 0) 70%);
         }
 
         .auth-card {
-            background: white;
-            border-radius: 24px;
-            box-shadow: 0 24px 60px rgba(20, 83, 45, 0.16);
+            background: var(--card-bg);
+            border-radius: 28px;
+            box-shadow: var(--shadow-lg);
             overflow: hidden;
-            max-width: 900px; /* Slightly narrower than register page since there are fewer fields */
+            max-width: 980px;
             width: 100%;
-            border: 1px solid rgba(20, 83, 45, 0.05);
+            border: 1px solid var(--border-color);
         }
 
+        /* Split Left Sidebar */
         .auth-sidebar {
-            background: linear-gradient(135deg, var(--primary-green) 0%, #166534 100%);
+            background: radial-gradient(circle at 20% 20%, #166534 0%, var(--primary-green) 70%, #062319 100%);
             color: white;
-            padding: 3rem;
+            padding: 3.5rem 3rem;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: space-between;
             position: relative;
+            overflow: hidden;
         }
 
-        /* Abstract shapes */
         .auth-sidebar::before {
             content: '';
             position: absolute;
-            bottom: -20%;
-            right: -20%;
-            width: 300px;
-            height: 300px;
-            background: radial-gradient(circle, rgba(220, 252, 231, 0.1) 0%, rgba(255,255,255,0) 70%);
+            top: -15%;
+            left: -15%;
+            width: 320px;
+            height: 320px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(0,0,0,0) 70%);
             border-radius: 50%;
+            pointer-events: none;
         }
 
+        .sidebar-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--accent-green);
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            width: fit-content;
+        }
+
+        .sidebar-feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 10px 16px;
+            border-radius: 14px;
+            font-size: 0.88rem;
+            color: #f1f5f9;
+        }
+
+        /* Form Wrapper */
         .auth-form-wrapper {
-            padding: 3.5rem;
+            padding: 3.5rem 3rem;
         }
 
-        .form-control {
-            padding: 0.8rem 1rem;
-            border-radius: 12px;
-            border: 1px solid #e7e5e4;
-            background-color: #fafaf9;
-            transition: all 0.2s;
+        /* Input Controls */
+        .input-group-custom {
+            position: relative;
         }
 
-        .form-control:focus {
-            background-color: white;
-            border-color: var(--primary-green);
-            box-shadow: 0 0 0 4px rgba(20, 83, 45, 0.1);
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text-muted);
+            font-size: 1.05rem;
+            z-index: 10;
         }
 
-        .form-label {
-            font-weight: 500;
-            font-size: 0.9rem;
+        .form-control-custom {
+            padding: 12px 16px 12px 46px;
+            border-radius: 14px;
+            border: 1.5px solid var(--border-color);
+            background-color: #f8fafc;
+            font-size: 0.95rem;
+            transition: all 0.25s ease;
+            color: var(--text-main);
+        }
+
+        .form-control-custom:focus {
+            background-color: #ffffff;
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 4px rgba(21, 128, 61, 0.12);
+            outline: none;
+        }
+
+        .form-label-custom {
+            font-weight: 600;
+            font-size: 0.88rem;
             color: var(--text-main);
             margin-bottom: 0.4rem;
         }
 
-        .btn-primary-custom {
+        /* Primary Button */
+        .btn-submit-custom {
             background-color: var(--primary-green);
             color: white;
-            font-weight: 600;
-            padding: 0.85rem;
-            border-radius: 12px;
+            font-weight: 700;
+            padding: 13px;
+            border-radius: 50px;
             border: none;
             width: 100%;
-            transition: all 0.3s;
-            margin-top: 1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(15, 57, 43, 0.2);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            font-size: 0.98rem;
         }
 
-        .btn-primary-custom:hover {
+        .btn-submit-custom:hover {
             background-color: var(--primary-hover);
             transform: translateY(-2px);
-            box-shadow: 0 8px 20px rgba(20, 83, 45, 0.15);
+            box-shadow: 0 8px 20px rgba(15, 57, 43, 0.3);
         }
 
         .back-link {
             color: var(--text-muted);
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
+            font-weight: 500;
             display: inline-flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 6px;
             transition: color 0.2s;
         }
 
         .back-link:hover {
-            color: var(--primary-green);
+            color: var(--primary-light);
         }
 
-            @media screen and (min-width: 1800px) {
-        html {
-            font-size: clamp(16px, 0.85vw, 30px);
+        .custom-alert {
+            border-radius: 14px;
+            border: none;
+            font-size: 0.92rem;
+            padding: 14px 18px;
         }
 
-        body {
-            font-size: 1rem;
-            line-height: 1.55;
+        /* --- Footer --- */
+        .footer {
+            background-color: var(--dark-bg);
+            padding: 50px 0 25px;
+            border-top: 4px solid var(--accent-emerald);
+            color: #9ca3af;
         }
 
-        .container {
-            width: min(94vw, 3200px) !important;
-            max-width: 3200px !important;
+        .footer-logo {
+            font-family: 'Outfit', sans-serif;
+            color: white;
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
         }
 
-        .container-fluid {
-            padding-left: clamp(1rem, 2vw, 4rem);
-            padding-right: clamp(1rem, 2vw, 4rem);
+        .footer-links a {
+            color: #d1d5db;
+            text-decoration: none;
+            margin: 0 12px;
+            font-size: 0.9rem;
+            transition: color 0.2s;
         }
 
-        .row {
-            --bs-gutter-x: clamp(1rem, 1.35vw, 3rem);
-            --bs-gutter-y: clamp(0.75rem, 0.9vw, 2rem);
+        .footer-links a:hover {
+            color: var(--accent-emerald);
         }
 
-        .navbar {
-            padding-top: clamp(0.65rem, 0.75vw, 1.5rem) !important;
-            padding-bottom: clamp(0.65rem, 0.75vw, 1.5rem) !important;
+        @media (max-width: 991px) {
+            .auth-form-wrapper { padding: 2.5rem 2rem; }
         }
-
-        .navbar-brand {
-            font-size: clamp(1.1rem, 0.8vw, 1.75rem) !important;
-            gap: clamp(0.5rem, 0.65vw, 1.25rem);
-            letter-spacing: normal;
-            line-height: 1.25;
-            white-space: normal;
-            max-width: 60%;
-        }
-
-        .nav-link {
-            font-size: clamp(0.9rem, 0.55vw, 1.2rem) !important;
-            padding: 0.55em 0.9em !important;
-        }
-
-        .logo-box {
-            width: clamp(40px, 1.8vw, 68px);
-            height: clamp(40px, 1.8vw, 68px);
-            font-size: clamp(1.1rem, 0.75vw, 1.8rem);
-        }
-
-        /* Headings */
-        h1 {
-            font-size: clamp(2rem, 2vw, 4.5rem);
-            line-height: 1.15;
-        }
-
-        h2 {
-            font-size: clamp(1.65rem, 1.45vw, 3.1rem);
-            line-height: 1.2;
-        }
-
-        h3 {
-            font-size: clamp(1.35rem, 1.1vw, 2.4rem);
-            line-height: 1.25;
-        }
-
-        h4 {
-            font-size: clamp(1.15rem, 0.9vw, 2rem);
-        }
-
-        .form-control,
-        .form-select {
-            font-size: clamp(0.9rem, 0.55vw, 1.2rem);
-            min-height: clamp(2.5rem, 2.2vw, 3.8rem);
-            padding: 0.65em 0.85em;
-            min-width: 0;
-        }
-
-        .form-label {
-            font-size: clamp(0.9rem, 0.55vw, 1.15rem);
-        }
-
-        .btn,
-        .btn-primary-custom,
-        .btn-outline-custom {
-            font-size: clamp(0.85rem, 0.52vw, 1.2rem);
-            line-height: 1.35;
-            white-space: normal;
-        }
-
-        .card,
-        .card-custom,
-        .feature-card {
-            border-radius: clamp(12px, 0.75vw, 24px);
-        }
-
-        .card-body,
-        .card-custom,
-        .feature-card {
-            min-width: 0;
-        }
-
-        .stat-number {
-            font-size: clamp(1.75rem, 1.35vw, 3rem) !important;
-            line-height: 1.2;
-            overflow-wrap: anywhere;
-        }
-
-        .icon-circle {
-            width: clamp(48px, 1.8vw, 68px);
-            height: clamp(48px, 1.8vw, 68px);
-            font-size: clamp(1.2rem, 0.8vw, 2rem);
-        }
-
-        .card-title {
-            font-size: clamp(1rem, 0.68vw, 1.45rem);
-        }
-
-        .card-text {
-            font-size: clamp(0.9rem, 0.58vw, 1.2rem);
-            overflow-wrap: anywhere;
-        }
-
-        .table {
-            font-size: clamp(0.9rem, 0.55vw, 1.2rem);
-            vertical-align: middle;
-        }
-
-        .table > :not(caption) > * > * {
-            padding: clamp(0.55rem, 0.55vw, 1.2rem);
-            vertical-align: middle;
-        }
-
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .hero-section {
-            padding: clamp(100px, 4.8vw, 200px)
-                    clamp(20px, 2vw, 64px)
-                    clamp(85px, 4vw, 165px);
-        }
-
-        .hero-title {
-            font-size: clamp(3rem, 3vw, 6.5rem);
-            line-height: 1.12;
-        }
-
-        .hero-subtitle {
-            font-size: clamp(1rem, 0.85vw, 1.65rem);
-            max-width: min(72vw, 1200px);
-            line-height: 1.6;
-        }
-
-        .features-wrapper {
-            padding-bottom: clamp(3rem, 4vw, 8rem);
-        }
-
-        .feature-card {
-            height: 100%;
-        }
-
-        .auth-card {
-            width: min(88vw, 3000px) !important;
-            max-width: min(88vw, 3000px) !important;
-        }
-
-        .auth-sidebar,
-        .auth-form-wrapper {
-            padding: clamp(2rem, 2.6vw, 5rem);
-        }
-
-        .header {
-            margin-bottom: clamp(1.5rem, 2vw, 3.5rem);
-            padding-bottom: clamp(0.5rem, 0.7vw, 1.25rem);
-        }
-
-        .no-print-btn {
-            font-size: clamp(0.9rem, 0.55vw, 1.2rem);
-            padding: 0.7em 1.15em;
-        }
-    }
-
-    @media screen and (min-width: 1200px) {
-        .table td,
-        .table th {
-            overflow-wrap: anywhere;
-        }
-
-        .table form,
-        .table .d-flex {
-            flex-wrap: wrap;
-        }
-    }
-
-    @media screen and (max-width: 767.98px) {
-        .navbar-brand {
-            max-width: calc(100% - 64px);
-            font-size: 1rem !important;
-            white-space: normal;
-        }
-
-        .hero-title {
-            font-size: clamp(2rem, 8vw, 2.8rem);
-        }
-
-        .hero-section {
-            padding: 80px 16px 72px;
-            border-bottom-left-radius: 24px;
-            border-bottom-right-radius: 24px;
-        }
-
-        .auth-card {
-            max-width: 100%;
-        }
-
-        .auth-sidebar,
-        .auth-form-wrapper {
-            padding: 1.5rem;
-        }
-
-        .table-responsive {
-            overflow-x: auto;
-        }
-    }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-12">
-                <div class="auth-card d-flex flex-column flex-lg-row">
+    <!-- Navigation Bar -->
+    <nav class="navbar navbar-expand-lg sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="homepage.php">
+                <div class="logo-box"><i class="bi bi-book-half"></i></div>
+                <span>Community Library</span>
+            </a>
+            
+            <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto gap-1 mt-3 mt-lg-0 align-items-lg-center">
+                    <li class="nav-item">
+                        <a class="nav-link" href="homepage.php"><i class="bi bi-house-door me-1"></i>Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="catalog.php"><i class="bi bi-journal-bookmark me-1"></i>Catalog</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="register.php"><i class="bi bi-person-plus me-1"></i>Membership</a>
+                    </li>
+                    <li class="nav-item ms-lg-1">
+                        <a class="btn btn-sm px-4 rounded-pill text-white fw-semibold" style="background-color: var(--primary-green);" href="login.php">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Login Container -->
+    <div class="auth-wrapper">
+        <div class="auth-card d-flex flex-column flex-lg-row">
+            
+            <!-- Left Decorative Sidebar -->
+            <div class="col-lg-5 auth-sidebar d-none d-lg-flex">
+                <div style="position: relative; z-index: 10;">
+                    <div class="sidebar-badge mb-4">
+                        <i class="bi bi-shield-lock"></i> Secure Login
+                    </div>
+                    <h2 class="display-6 fw-bold mb-3">Welcome Back to Your Library.</h2>
+                    <p style="color: #d1d5db; font-size: 0.98rem; line-height: 1.6;">
+                        Sign in to access your personal dashboard, track active book loans, view queue statuses, and check fines.
+                    </p>
+                </div>
+
+                <div class="d-flex flex-column gap-2 mt-4" style="position: relative; z-index: 10;">
+                    <div class="sidebar-feature-item">
+                        <i class="bi bi-person-badge text-warning fs-5"></i>
+                        <span>Member & Staff Portal Access</span>
+                    </div>
+                    <div class="sidebar-feature-item">
+                        <i class="bi bi-journal-check text-info fs-5"></i>
+                        <span>Track Borrowed Books & Returns</span>
+                    </div>
+                    <div class="sidebar-feature-item">
+                        <i class="bi bi-bell text-success fs-5"></i>
+                        <span>Real-Time Reservation Alerts</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Form Section -->
+            <div class="col-lg-7 auth-form-wrapper">
+                <div class="d-flex align-items-center justify-content-between mb-4">
+                    <a href="homepage.php" class="back-link">
+                        <i class="bi bi-arrow-left"></i> Back to Homepage
+                    </a>
+                </div>
+                
+                <h3 class="fw-bold mb-1" style="color: var(--primary-green);">Account Login</h3>
+                <p class="text-muted small mb-4">Enter your registered email address and password to continue.</p>
+
+                <!-- Feedback Message -->
+                <?= $message; ?>
+
+                <!-- Login Form -->
+                <form action="login.php" method="POST">
                     
-                    <!-- Left Sidebar -->
-                    <div class="col-lg-5 auth-sidebar d-none d-lg-flex">
-                        <div style="position: relative; z-index: 10;">
-                            <div class="d-inline-flex align-items-center justify-content-center bg-white text-success rounded-3 mb-4" style="width: 50px; height: 50px; font-size: 1.5rem;">
-                                <i class="bi bi-person-badge" style="color: var(--primary-green);"></i>
-                            </div>
-                            <h2 class="display-6 mb-3">Welcome Back.</h2>
-                            <p class="text-white-50" style="font-size: 1.1rem; line-height: 1.6;">
-                                Log in to access your library dashboard, check due dates, and explore the catalog.
-                            </p>
+                    <!-- Email Address -->
+                    <div class="mb-3">
+                        <label for="email" class="form-label-custom">Email Address</label>
+                        <div class="input-group-custom">
+                            <i class="bi bi-envelope input-icon"></i>
+                            <input type="email" class="form-control form-control-custom" id="email" name="email" placeholder="juan@example.com" required>
                         </div>
                     </div>
 
-                    <!-- Right Side (Form) -->
-                    <div class="col-lg-7 auth-form-wrapper">
-                        <a href="homepage.php" class="back-link mb-4">
-                            <i class="bi bi-arrow-left"></i> Back to Home
-                        </a>
-                        
-                        <h3 class="mb-1">Log In</h3>
-                        <p class="text-muted mb-4">Please enter your credentials to continue.</p>
-
-                        <?= $message; ?>
-                        <!-- Login Form -->
-                        <form action="login.php" method="POST">
-                            
-                            <div class="mb-3">
-                                <label for="email" class="form-label">Email Address</label>
-                                <input type="email" class="form-control" id="email" name="email" placeholder="juan@example.com" required>
-                            </div>
-
-                            <div class="mb-4">
-                                <label for="password" class="form-label">Password</label>
-                                <input type="password" class="form-control" id="password" name="password" placeholder="Enter your password" required>
-                            </div>
-
-                            <button type="submit" name="login_btn" class="btn btn-primary-custom">
-                                Login
-                            </button>
-
-                            <div class="text-center mt-4">
-                                <span class="text-muted">Don't have an account?</span> 
-                                <a href="register.php" class="text-decoration-none fw-semibold" style="color: var(--primary-green);">Register here</a>
-                            </div>
-
-                        </form>
+                    <!-- Password -->
+                    <div class="mb-4">
+                        <label for="password" class="form-label-custom">Password</label>
+                        <div class="input-group-custom">
+                            <i class="bi bi-lock input-icon"></i>
+                            <input type="password" class="form-control form-control-custom" id="password" name="password" placeholder="Enter your password" required>
+                        </div>
                     </div>
 
-                </div>
+                    <!-- Submit Button -->
+                    <button type="submit" name="login_btn" class="btn-submit-custom">
+                        <i class="bi bi-box-arrow-in-right"></i> Log In to Dashboard
+                    </button>
+
+                    <!-- Register Link -->
+                    <div class="text-center mt-4">
+                        <span class="text-muted small">Don't have an account yet?</span> 
+                        <a href="register.php" class="text-decoration-none fw-semibold ms-1" style="color: var(--primary-light);">Register here</a>
+                    </div>
+
+                </form>
             </div>
+
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="footer text-center">
+        <div class="container">
+            <div class="footer-logo">
+                <i class="bi bi-book-half me-2" style="color: var(--accent-emerald);"></i>Community Library System
+            </div>
+            <div class="footer-links my-3 d-flex flex-wrap justify-content-center gap-2">
+                <a href="homepage.php">Home</a>
+                <span class="text-secondary">•</span>
+                <a href="catalog.php">Catalog</a>
+                <span class="text-secondary">•</span>
+                <a href="register.php">Membership</a>
+            </div>
+            <p class="text-secondary small mb-0 mt-3" style="opacity: 0.75;">
+                &copy; <?= date('Y'); ?> Community Library Management System.<br>Designed for Student Development.
+            </p>
+        </div>
+    </footer>
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>

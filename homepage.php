@@ -36,32 +36,44 @@ try {
     <!-- Google Fonts: Inter & Outfit -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --primary-green: #14532d;
+            --primary-green: #0f392b;
+            --primary-light: #15803d;
             --primary-hover: #166534;
             --accent-green: #dcfce7;
-            --dark-bg: #1c1917;
-            --light-bg: #fafaf9;
-            --text-main: #292524;
-            --text-muted: #78716c;
+            --accent-emerald: #10b981;
+            --dark-bg: #111827;
+            --light-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: rgba(226, 232, 240, 0.8);
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
         }
 
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--light-bg);
             color: var(--text-main);
+            overflow-x: hidden;
         }
 
-        h1, h2, h3, h4, h5, .navbar-brand { font-family: 'Outfit', sans-serif; }
+        h1, h2, h3, h4, h5, .navbar-brand { 
+            font-family: 'Outfit', sans-serif; 
+        }
 
+        /* --- Navbar Redesign --- */
         .navbar {
-            background-color: rgba(250, 250, 249, 0.95) !important;
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(0,0,0,0.05);
-            padding: 1rem 0;
+            background: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+            padding: 0.85rem 0;
+            transition: all 0.3s ease;
         }
 
         .navbar-brand {
@@ -70,143 +82,174 @@ try {
             gap: 12px;
             font-weight: 800;
             color: var(--primary-green) !important;
-            font-size: 1.25rem;
-            letter-spacing: -0.5px;
+            font-size: 1.2rem;
+            letter-spacing: -0.3px;
         }
         
         .logo-box {
-            width: 40px;
-            height: 40px;
-            background: linear-gradient(135deg, var(--primary-green), #22c55e);
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--primary-green), var(--accent-emerald));
             color: white;
-            border-radius: 10px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
-            box-shadow: 0 4px 10px rgba(20, 83, 45, 0.2);
+            font-size: 1.25rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
             flex-shrink: 0;
+            transition: transform 0.3s ease;
+        }
+
+        .navbar-brand:hover .logo-box {
+            transform: scale(1.05) rotate(-3deg);
         }
 
         .nav-link {
             color: var(--text-main) !important;
             font-weight: 500;
             font-size: 0.95rem;
-            padding: 0.5rem 1rem !important;
-            transition: all 0.3s ease;
-            border-radius: 8px;
+            padding: 0.5rem 1.1rem !important;
+            transition: all 0.25s ease;
+            border-radius: 50px;
         }
 
         .nav-link:hover, .nav-link.active {
-            color: var(--primary-green) !important;
+            color: var(--primary-light) !important;
             background-color: var(--accent-green);
         }
 
+        /* --- Hero Section --- */
         .hero-section {
-            background: linear-gradient(135deg, var(--primary-green) 0%, #166534 100%);
+            background: radial-gradient(circle at 50% 20%, #166534 0%, var(--primary-green) 70%, #062319 100%);
             position: relative;
             overflow: hidden;
-            padding: 140px 20px 120px;
-            border-bottom-left-radius: 50px;
-            border-bottom-right-radius: 50px;
-            box-shadow: 0 10px 30px rgba(20, 83, 45, 0.15);
+            padding: 120px 20px 130px;
+            border-bottom-left-radius: 40px;
+            border-bottom-right-radius: 40px;
+            box-shadow: 0 20px 40px rgba(15, 57, 43, 0.2);
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: -10%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 600px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.25) 0%, rgba(0,0,0,0) 70%);
+            filter: blur(50px);
+            pointer-events: none;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.12);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: var(--accent-green);
+            padding: 6px 18px;
+            border-radius: 50px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.3px;
         }
 
         .hero-title {
             font-weight: 800;
-            font-size: 3.5rem;
-            line-height: 1.2;
+            font-size: 3.6rem;
+            line-height: 1.15;
             letter-spacing: -1px;
-            margin-bottom: 1.5rem;
-            text-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            margin-bottom: 1.25rem;
+            text-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+
+        .hero-title span {
+            background: linear-gradient(135deg, #a7f3d0 0%, #34d399 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
 
         .hero-subtitle {
             font-size: 1.15rem;
             font-weight: 400;
-            color: #dcfce7;
-            margin-bottom: 2.5rem;
-            max-width: 650px;
+            color: #e2e8f0;
+            max-width: 640px;
             margin-left: auto;
             margin-right: auto;
+            line-height: 1.6;
         }
 
-        .btn-primary-custom {
-            background-color: var(--light-bg);
-            color: var(--primary-green);
-            font-weight: 600;
-            padding: 14px 32px;
+        .hero-highlight-pill {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #f1f5f9;
+            padding: 10px 22px;
             border-radius: 50px;
-            border: 2px solid var(--light-bg);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        }
-        
-        .btn-primary-custom:hover {
-            background-color: #ffffff;
-            color: var(--primary-hover);
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            font-size: 0.9rem;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
         }
 
-        .btn-outline-custom {
-            background-color: rgba(255,255,255,0.05);
-            backdrop-filter: blur(5px);
-            color: white;
-            font-weight: 600;
-            padding: 14px 32px;
-            border-radius: 50px;
-            border: 2px solid rgba(220, 252, 231, 0.4);
-            transition: all 0.3s;
+        .hero-highlight-pill:hover {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: translateY(-2px);
         }
 
-        .btn-outline-custom:hover {
-            background-color: rgba(220, 252, 231, 0.15);
-            border-color: var(--accent-green);
-            transform: translateY(-3px);
-            color: white;
-        }
-
+        /* --- Quick Access Features Section --- */
         .features-wrapper {
-            margin-top: -70px;
+            margin-top: -50px;
             position: relative;
             z-index: 20;
             padding-bottom: 90px;
         }
 
         .section-header {
-            font-size: 0.85rem;
-            font-weight: 700;
-            color: var(--text-muted);
-            letter-spacing: 1.5px;
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: var(--primary-light);
+            letter-spacing: 2px;
             text-transform: uppercase;
+            background: var(--accent-green);
+            padding: 4px 14px;
+            border-radius: 50px;
+            display: inline-block;
         }
 
         .feature-card {
-            border: 1px solid rgba(20, 83, 45, 0.05);
-            border-radius: 24px;
-            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
-            background-color: white;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            transition: all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
+            box-shadow: var(--shadow-sm);
+            background-color: var(--card-bg);
             overflow: hidden;
+            height: 100%;
         }
 
         .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px rgba(20, 83, 45, 0.08);
-            border-color: var(--accent-green);
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(16, 185, 129, 0.3);
         }
 
         .icon-circle {
-            width: 56px;
-            height: 56px;
+            width: 52px;
+            height: 52px;
             background-color: var(--accent-green);
-            color: var(--primary-green);
-            border-radius: 16px;
+            color: var(--primary-light);
+            border-radius: 14px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.6rem;
+            font-size: 1.5rem;
             margin-bottom: 1.25rem;
             transition: all 0.3s ease;
         }
@@ -214,7 +257,7 @@ try {
         .feature-card:hover .icon-circle {
             background-color: var(--primary-green);
             color: var(--accent-green);
-            transform: scale(1.05) rotate(-5deg);
+            transform: scale(1.08) rotate(-4deg);
         }
 
         .card-title {
@@ -226,269 +269,95 @@ try {
         
         .card-text {
             color: var(--text-muted);
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             line-height: 1.6;
         }
 
+        .stat-box {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 10px 14px;
+            border: 1px solid #f1f5f9;
+        }
+
+        .stat-number {
+            font-family: 'Outfit', sans-serif;
+            font-weight: 800;
+            font-size: 1.35rem;
+            color: var(--primary-green);
+        }
+
+        .book-item-pill {
+            background: #f8fafc;
+            border-radius: 10px;
+            padding: 8px 12px;
+            border: 1px solid #f1f5f9;
+            transition: background 0.2s;
+        }
+
+        .book-item-pill:hover {
+            background: var(--accent-green);
+        }
+
+        .book-category-tag {
+            font-size: 0.72rem;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 50px;
+            background: #e2e8f0;
+            color: var(--text-main);
+        }
+
+        /* --- Footer --- */
         .footer {
             background-color: var(--dark-bg);
-            padding: 70px 0 40px;
-            border-top: 4px solid var(--primary-green);
+            padding: 70px 0 35px;
+            border-top: 4px solid var(--accent-emerald);
+            color: #9ca3af;
         }
         
         .footer-logo {
             font-family: 'Outfit', sans-serif;
             color: white;
-            font-size: 1.3rem;
+            font-size: 1.35rem;
             font-weight: 700;
             margin-bottom: 1.2rem;
         }
 
         .footer-links a {
-            color: #a8a29e;
+            color: #d1d5db;
             text-decoration: none;
-            margin: 0 15px;
-            font-size: 0.95rem;
+            margin: 0 14px;
+            font-size: 0.92rem;
             transition: color 0.2s;
         }
 
         .footer-links a:hover {
-            color: var(--accent-green);
+            color: var(--accent-emerald);
+        }
+
+        .footer-divider {
+            color: #4b5563;
         }
 
         @media (max-width: 768px) {
-            .hero-title { font-size: 2.5rem; }
-            .features-wrapper { margin-top: 30px; }
-            .hero-section { border-radius: 0 0 30px 30px; padding: 100px 20px 80px; }
+            .hero-title { font-size: 2.4rem; }
+            .hero-subtitle { font-size: 1rem; }
+            .features-wrapper { margin-top: 20px; }
+            .hero-section { border-radius: 0 0 24px 24px; padding: 90px 16px 70px; }
         }
 
-            @media screen and (min-width: 1800px) {
-        html {
-            font-size: clamp(16px, 0.85vw, 30px);
+        @media screen and (min-width: 1800px) {
+            html { font-size: 18px; }
+            .container { max-width: 1600px !important; }
         }
 
-        body {
-            font-size: 1rem;
-            line-height: 1.55;
+        @media screen and (max-width: 767.98px) {
+            .navbar-brand {
+                font-size: 1rem !important;
+                white-space: normal;
+            }
         }
-
-        .container {
-            width: min(94vw, 3200px) !important;
-            max-width: 3200px !important;
-        }
-
-        .container-fluid {
-            padding-left: clamp(1rem, 2vw, 4rem);
-            padding-right: clamp(1rem, 2vw, 4rem);
-        }
-
-        .row {
-            --bs-gutter-x: clamp(1rem, 1.35vw, 3rem);
-            --bs-gutter-y: clamp(0.75rem, 0.9vw, 2rem);
-        }
-
-        .navbar {
-            padding-top: clamp(0.65rem, 0.75vw, 1.5rem) !important;
-            padding-bottom: clamp(0.65rem, 0.75vw, 1.5rem) !important;
-        }
-
-        .navbar-brand {
-            font-size: clamp(1.1rem, 0.8vw, 1.75rem) !important;
-            gap: clamp(0.5rem, 0.65vw, 1.25rem);
-            letter-spacing: normal;
-            line-height: 1.25;
-            white-space: normal;
-            max-width: 60%;
-        }
-
-        .nav-link {
-            font-size: clamp(0.9rem, 0.55vw, 1.2rem) !important;
-            padding: 0.55em 0.9em !important;
-        }
-
-        .logo-box {
-            width: clamp(40px, 1.8vw, 68px);
-            height: clamp(40px, 1.8vw, 68px);
-            font-size: clamp(1.1rem, 0.75vw, 1.8rem);
-        }
-
-        /* Headings */
-        h1 {
-            font-size: clamp(2rem, 2vw, 4.5rem);
-            line-height: 1.15;
-        }
-
-        h2 {
-            font-size: clamp(1.65rem, 1.45vw, 3.1rem);
-            line-height: 1.2;
-        }
-
-        h3 {
-            font-size: clamp(1.35rem, 1.1vw, 2.4rem);
-            line-height: 1.25;
-        }
-
-        h4 {
-            font-size: clamp(1.15rem, 0.9vw, 2rem);
-        }
-
-        .form-control,
-        .form-select {
-            font-size: clamp(0.9rem, 0.55vw, 1.2rem);
-            min-height: clamp(2.5rem, 2.2vw, 3.8rem);
-            padding: 0.65em 0.85em;
-            min-width: 0;
-        }
-
-        .form-label {
-            font-size: clamp(0.9rem, 0.55vw, 1.15rem);
-        }
-
-        .btn,
-        .btn-primary-custom,
-        .btn-outline-custom {
-            font-size: clamp(0.85rem, 0.52vw, 1.2rem);
-            line-height: 1.35;
-            white-space: normal;
-        }
-
-        .card,
-        .card-custom,
-        .feature-card {
-            border-radius: clamp(12px, 0.75vw, 24px);
-        }
-
-        .card-body,
-        .card-custom,
-        .feature-card {
-            min-width: 0;
-        }
-
-        .stat-number {
-            font-size: clamp(1.75rem, 1.35vw, 3rem) !important;
-            line-height: 1.2;
-            overflow-wrap: anywhere;
-        }
-
-        .icon-circle {
-            width: clamp(48px, 1.8vw, 68px);
-            height: clamp(48px, 1.8vw, 68px);
-            font-size: clamp(1.2rem, 0.8vw, 2rem);
-        }
-
-        .card-title {
-            font-size: clamp(1rem, 0.68vw, 1.45rem);
-        }
-
-        .card-text {
-            font-size: clamp(0.9rem, 0.58vw, 1.2rem);
-            overflow-wrap: anywhere;
-        }
-
-        .table {
-            font-size: clamp(0.9rem, 0.55vw, 1.2rem);
-            vertical-align: middle;
-        }
-
-        .table > :not(caption) > * > * {
-            padding: clamp(0.55rem, 0.55vw, 1.2rem);
-            vertical-align: middle;
-        }
-
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .hero-section {
-            padding: clamp(100px, 4.8vw, 200px)
-                    clamp(20px, 2vw, 64px)
-                    clamp(85px, 4vw, 165px);
-        }
-
-        .hero-title {
-            font-size: clamp(3rem, 3vw, 6.5rem);
-            line-height: 1.12;
-        }
-
-        .hero-subtitle {
-            font-size: clamp(1rem, 0.85vw, 1.65rem);
-            max-width: min(72vw, 1200px);
-            line-height: 1.6;
-        }
-
-        .features-wrapper {
-            padding-bottom: clamp(3rem, 4vw, 8rem);
-        }
-
-        .feature-card {
-            height: 100%;
-        }
-
-        .auth-card {
-            width: min(88vw, 3000px) !important;
-            max-width: min(88vw, 3000px) !important;
-        }
-
-        .auth-sidebar,
-        .auth-form-wrapper {
-            padding: clamp(2rem, 2.6vw, 5rem);
-        }
-
-        .header {
-            margin-bottom: clamp(1.5rem, 2vw, 3.5rem);
-            padding-bottom: clamp(0.5rem, 0.7vw, 1.25rem);
-        }
-
-        .no-print-btn {
-            font-size: clamp(0.9rem, 0.55vw, 1.2rem);
-            padding: 0.7em 1.15em;
-        }
-    }
-
-    @media screen and (min-width: 1200px) {
-        .table td,
-        .table th {
-            overflow-wrap: anywhere;
-        }
-
-        .table form,
-        .table .d-flex {
-            flex-wrap: wrap;
-        }
-    }
-
-    @media screen and (max-width: 767.98px) {
-        .navbar-brand {
-            max-width: calc(100% - 64px);
-            font-size: 1rem !important;
-            white-space: normal;
-        }
-
-        .hero-title {
-            font-size: clamp(2rem, 8vw, 2.8rem);
-        }
-
-        .hero-section {
-            padding: 80px 16px 72px;
-            border-bottom-left-radius: 24px;
-            border-bottom-right-radius: 24px;
-        }
-
-        .auth-card {
-            max-width: 100%;
-        }
-
-        .auth-sidebar,
-        .auth-form-wrapper {
-            padding: 1.5rem;
-        }
-
-        .table-responsive {
-            overflow-x: auto;
-        }
-    }
     </style>
 </head>
 <body>
@@ -498,7 +367,7 @@ try {
         <div class="container">
             <a class="navbar-brand" href="homepage.php">
                 <div class="logo-box"><i class="bi bi-book-half"></i></div>
-                Community Library Management System
+                <span>Community Library</span>
             </a>
             
             <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -506,35 +375,35 @@ try {
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ms-auto gap-2 mt-3 mt-lg-0 align-items-center">
+                <ul class="navbar-nav ms-auto gap-1 mt-3 mt-lg-0 align-items-lg-center">
                     <li class="nav-item">
-                        <a class="nav-link active" href="homepage.php">Home</a>
+                        <a class="nav-link active" href="homepage.php"><i class="bi bi-house-door me-1"></i>Home</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="catalog.php">Catalog</a>
+                        <a class="nav-link" href="catalog.php"><i class="bi bi-journal-bookmark me-1"></i>Catalog</a>
                     </li>
 
                     <?php if (isset($_SESSION['member_id'])): ?>
                         <li class="nav-item">
                             <?php if ($_SESSION['role_id'] == 1): ?>
-                                <a class="nav-link fw-bold" style="color: #14532d;" href="admin_dashboard.php">Admin Panel</a>
+                                <a class="nav-link fw-bold text-success" href="admin_dashboard.php"><i class="bi bi-speedometer2 me-1"></i>Admin Panel</a>
                             <?php else: ?>
-                                <a class="nav-link fw-bold" style="color: #14532d;" href="member_dashboard.php">Dashboard</a>
+                                <a class="nav-link fw-bold text-success" href="member_dashboard.php"><i class="bi bi-person-badge me-1"></i>Dashboard</a>
                             <?php endif; ?>
                         </li>
                         <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
-                            <a class="btn fw-semibold px-4 rounded-pill" 
-                            style="background-color: transparent; border: 1.5px solid var(--primary-green); color: var(--primary-green); transition: all 0.2s;" 
-                            onmouseover="this.style.backgroundColor='var(--accent-green)'; this.style.borderColor='var(--accent-green)';" 
-                            onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='var(--primary-green)';" 
-                            href="logout.php">Logout</a>
+                            <a class="btn btn-outline-danger btn-sm rounded-pill px-4" href="logout.php">
+                                <i class="bi bi-box-arrow-right me-1"></i>Logout
+                            </a>
                         </li>
                     <?php else: ?>
                         <li class="nav-item">
-                            <a class="nav-link" href="register.php">Membership</a>
+                            <a class="nav-link" href="register.php"><i class="bi bi-person-plus me-1"></i>Membership</a>
                         </li>
-                        <li class="nav-item me-1">
-                            <a class="nav-link" href="login.php">Login</a>
+                        <li class="nav-item ms-lg-1">
+                            <a class="btn btn-sm px-4 rounded-pill text-white fw-semibold" style="background-color: var(--primary-green);" href="login.php">
+                                <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                            </a>
                         </li>
                     <?php endif; ?>
                 </ul>
@@ -545,21 +414,24 @@ try {
     <!-- Hero Section -->
     <section class="hero-section text-center text-white d-flex align-items-center justify-content-center">
         <div class="container hero-content">
-            <h1 class="hero-title">Grow Your Mind.<br>Connect Your Community.</h1>
-            <p class="hero-subtitle">Explore thousands of books, reserve physical resources, and manage loans in a seamless modern environment.</p>
+            <div class="hero-badge">
+                <i class="bi bi-stars"></i> Modern Knowledge Hub
+            </div>
             
-            <div class="d-flex gap-3 justify-content-center">
-                <?php if (isset($_SESSION['member_id'])): ?>
-                    <a href="catalog.php" class="btn btn-primary-custom">Browse Catalog</a>
-                    <?php if ($_SESSION['role_id'] == 1): ?>
-                        <a href="admin_dashboard.php" class="btn btn-outline-custom">Admin Panel</a>
-                    <?php else: ?>
-                        <a href="member_dashboard.php" class="btn btn-outline-custom">My Dashboard</a>
-                    <?php endif; ?>
-                <?php else: ?>
-                    <a href="register.php" class="btn btn-primary-custom">Become a Member</a>
-                    <a href="catalog.php" class="btn btn-outline-custom">Explore Catalog</a>
-                <?php endif; ?>
+            <h1 class="hero-title">Grow Your Mind.<br><span>Connect Your Community.</span></h1>
+            <p class="hero-subtitle mb-0">Explore thousands of books, reserve physical resources, and manage loans seamlessly in a modern library space.</p>
+
+            <!-- Feature Highlight Strip -->
+            <div class="d-inline-flex flex-wrap gap-3 justify-content-center mt-4">
+                <div class="hero-highlight-pill">
+                    <i class="bi bi-shield-check text-warning me-1"></i> Free Membership
+                </div>
+                <div class="hero-highlight-pill">
+                    <i class="bi bi-clock-history text-info me-1"></i> 7 Days Borrowing
+                </div>
+                <div class="hero-highlight-pill">
+                    <i class="bi bi-people text-success me-1"></i> Real-Time Reservation Queue
+                </div>
             </div>
         </div>
     </section>
@@ -567,106 +439,132 @@ try {
     <!-- Dynamic Quick Access Section -->
     <section class="features-wrapper">
         <div class="container">
-            <div class="text-center mb-5 d-none d-md-block">
-                <p class="section-header">Overview</p>
+            <div class="text-center mb-4">
+                <span class="section-header">Live Statistics & Overview</span>
             </div>
             
             <div class="row g-4 justify-content-center">
-                <!-- Card 1 -->
+                <!-- Card 1: Collection Stats -->
                 <div class="col-12 col-md-6 col-lg-3">
-                    <div class="card feature-card h-100 p-4">
+                    <div class="card feature-card p-4">
                         <div class="card-body p-0 d-flex flex-column">
                             <div class="icon-circle">
                                 <i class="bi bi-collection-fill"></i>
                             </div>
                             <h5 class="card-title">Collection Size</h5>
                             <p class="card-text mb-3">Our catalog is live and updated in real-time by library administrators.</p>
+                            
                             <div class="mt-auto pt-3 border-top">
-                                <div class="d-flex justify-content-between align-items-center small">
-                                    <span class="text-muted">Total Titles:</span>
-                                    <span class="fw-bold text-success fs-6"><?= $total_titles; ?></span>
+                                <div class="stat-box d-flex justify-content-between align-items-center mb-2">
+                                    <span class="small text-muted fw-medium">Total Titles</span>
+                                    <span class="stat-number"><?= number_format($total_titles); ?></span>
                                 </div>
-                                <div class="d-flex justify-content-between align-items-center small mt-1">
-                                    <span class="text-muted">Categories:</span>
-                                    <span class="fw-bold text-dark fs-6"><?= $total_categories; ?></span>
+                                <div class="stat-box d-flex justify-content-between align-items-center">
+                                    <span class="small text-muted fw-medium">Categories</span>
+                                    <span class="stat-number" style="color: var(--primary-light);"><?= number_format($total_categories); ?></span>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Card 2 -->
+                <!-- Card 2: New Arrivals -->
                 <div class="col-12 col-md-6 col-lg-3">
-                    <div class="card feature-card h-100 p-4">
+                    <div class="card feature-card p-4">
                         <div class="card-body p-0 d-flex flex-column">
                             <div class="icon-circle">
                                 <i class="bi bi-stars"></i>
                             </div>
                             <h5 class="card-title">New Arrivals</h5>
+                            
                             <?php if (count($latest_books) > 0): ?>
-                                <ul class="list-unstyled mb-3 small">
+                                <div class="d-flex flex-column gap-2 mb-3">
                                     <?php foreach ($latest_books as $b): ?>
-                                        <li class="mb-2 text-truncate">
-                                            <i class="bi bi-book me-1 text-success"></i>
-                                            <strong><?= htmlspecialchars($b['title']); ?></strong>
-                                        </li>
+                                        <div class="book-item-pill">
+                                            <div class="d-flex align-items-center justify-content-between">
+                                                <span class="fw-semibold text-truncate small" style="max-width: 140px;" title="<?= htmlspecialchars($b['title']); ?>">
+                                                    <?= htmlspecialchars($b['title']); ?>
+                                                </span>
+                                                <span class="book-category-tag"><?= htmlspecialchars($b['category']); ?></span>
+                                            </div>
+                                            <div class="text-muted small text-truncate" style="font-size: 0.78rem;">
+                                                by <?= htmlspecialchars($b['author']); ?>
+                                            </div>
+                                        </div>
                                     <?php endforeach; ?>
-                                </ul>
+                                </div>
                             <?php else: ?>
                                 <p class="card-text mb-3">Check out our newly acquired catalog items on the catalog page.</p>
                             <?php endif; ?>
+                            
                             <div class="mt-auto pt-3 border-top">
-                                <a href="catalog.php" class="btn btn-sm btn-outline-success w-100 rounded-pill">View in Catalog</a>
+                                <a href="catalog.php" class="btn btn-sm btn-outline-success w-100 rounded-pill fw-semibold">
+                                    View in Catalog <i class="bi bi-arrow-right ms-1"></i>
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Card 3 -->
+                <!-- Card 3: Quick Actions -->
                 <div class="col-12 col-md-6 col-lg-3">
-                    <div class="card feature-card h-100 p-4">
+                    <div class="card feature-card p-4">
                         <div class="card-body p-0 d-flex flex-column">
                             <div class="icon-circle">
                                 <i class="bi bi-person-workspace"></i>
                             </div>
                             <h5 class="card-title">Quick Actions</h5>
+                            
                             <?php if (isset($_SESSION['member_id']) && $_SESSION['role_id'] == 1): ?>
-                                <p class="card-text mb-3">Admin options to manage inventory, return loans, and review queues.</p>
-                                <div class="mt-auto pt-3 border-top">
-                                    <a href="add_book.php" class="btn btn-sm btn-success w-100 rounded-pill mb-2">+ Add New Book</a>
-                                    <a href="admin_dashboard.php" class="btn btn-sm btn-outline-success w-100 rounded-pill">Admin Dashboard</a>
+                                <p class="card-text mb-3">Admin portal to manage catalog inventory, loan returns, and user queues.</p>
+                                <div class="mt-auto pt-3 border-top d-flex flex-column gap-2">
+                                    <a href="add_book.php" class="btn btn-sm text-white w-100 rounded-pill fw-semibold" style="background-color: var(--primary-light);">
+                                        <i class="bi bi-plus-circle me-1"></i> Add New Book
+                                    </a>
                                 </div>
                             <?php elseif (isset($_SESSION['member_id'])): ?>
-                                <p class="card-text mb-3">Review your borrowed items, due dates, and active book reservations.</p>
+                                <p class="card-text mb-3">Review active loans, check upcoming return due dates, and track fines.</p>
                                 <div class="mt-auto pt-3 border-top">
-                                    <a href="member_dashboard.php" class="btn btn-sm btn-success w-100 rounded-pill">My Loans & Fines</a>
+                                    <a href="member_dashboard.php" class="btn btn-sm text-white w-100 rounded-pill fw-semibold" style="background-color: var(--primary-light);">
+                                        <i class="bi bi-grid-1x2 me-1"></i> My Loans & Fines
+                                    </a>
                                 </div>
                             <?php else: ?>
-                                <p class="card-text mb-3">Register for a member account to borrow books and place reservations.</p>
+                                <p class="card-text mb-3">Register for a member account to borrow physical books and place queue holds.</p>
                                 <div class="mt-auto pt-3 border-top">
-                                    <a href="register.php" class="btn btn-sm btn-success w-100 rounded-pill">Create Account</a>
+                                    <a href="register.php" class="btn btn-sm text-white w-100 rounded-pill fw-semibold" style="background-color: var(--primary-light);">
+                                        <i class="bi bi-person-plus me-1"></i> Create Account
+                                    </a>
                                 </div>
                             <?php endif; ?>
                         </div>
                     </div>
                 </div>
 
-                <!-- Card 4 -->
+                <!-- Card 4: Borrowing Rules -->
                 <div class="col-12 col-md-6 col-lg-3">
-                    <div class="card feature-card h-100 p-4">
+                    <div class="card feature-card p-4">
                         <div class="card-body p-0 d-flex flex-column">
                             <div class="icon-circle">
                                 <i class="bi bi-shield-check"></i>
                             </div>
                             <h5 class="card-title">Borrowing Rules</h5>
-                            <p class="card-text mb-2 small text-muted">
-                                Standard loan period is <strong>7 days</strong> per book.
-                            </p>
-                            <p class="card-text mb-3 small text-muted">
-                                Late returns incur an automated fine of <strong>₱<?= number_format(FINE_PER_DAY, 2); ?>/day</strong>.
-                            </p>
+                            
+                            <div class="d-flex flex-column gap-2 mb-3">
+                                <div class="d-flex align-items-center gap-2 text-muted small">
+                                    <i class="bi bi-clock-history text-success fs-6"></i>
+                                    <span>Loan Period: <strong>7 Days</strong></span>
+                                </div>
+                                <div class="d-flex align-items-center gap-2 text-muted small">
+                                    <i class="bi bi-exclamation-circle text-warning fs-6"></i>
+                                    <span>Late Return: <strong>₱<?= number_format(FINE_PER_DAY, 2); ?>/day</strong></span>
+                                </div>
+                            </div>
+
                             <div class="mt-auto pt-3 border-top">
-                                <span class="badge bg-light text-dark border w-100 py-2">First Come, First Served Queue</span>
+                                <span class="badge bg-light text-dark border w-100 py-2 font-monospace fw-normal">
+                                    <i class="bi bi-info-circle me-1 text-primary"></i> First Come, First Served
+                                </span>
                             </div>
                         </div>
                     </div>
@@ -675,20 +573,32 @@ try {
         </div>
     </section>
 
-    <!-- Footer -->
+    <!-- Dynamic Footer -->
     <footer class="footer text-center">
         <div class="container">
             <div class="footer-logo">
-                <i class="bi bi-book-half me-2" style="color: var(--accent-green);"></i>Community Library Management System
+                <i class="bi bi-book-half me-2" style="color: var(--accent-emerald);"></i>Community Library System
             </div>
-            <div class="footer-links my-4 d-flex flex-wrap justify-content-center gap-2">
+            
+            <div class="footer-links my-4 d-flex flex-wrap justify-content-center gap-2 align-items-center">
                 <a href="homepage.php">Home</a>
                 <span class="footer-divider d-none d-sm-inline">•</span>
                 <a href="catalog.php">Catalog</a>
-                <span class="footer-divider d-none d-sm-inline">•</span>
-                <a href="register.php">Membership</a>
+
+                <?php if (isset($_SESSION['member_id'])): ?>
+                    <span class="footer-divider d-none d-sm-inline">•</span>
+                    <?php if ($_SESSION['role_id'] == 1): ?>
+                        <a href="admin_dashboard.php">Admin Panel</a>
+                    <?php else: ?>
+                        <a href="member_dashboard.php">Dashboard</a>
+                    <?php endif; ?>
+                <?php else: ?>
+                    <span class="footer-divider d-none d-sm-inline">•</span>
+                    <a href="register.php">Membership</a>
+                <?php endif; ?>
             </div>
-            <p class="text-secondary small mb-0 mt-4" style="opacity: 0.7;">
+
+            <p class="text-secondary small mb-0 mt-4" style="opacity: 0.75;">
                 &copy; <?= date('Y'); ?> Community Library Management System.<br>Designed for Student Development.
             </p>
         </div>

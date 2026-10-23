@@ -14,8 +14,8 @@ $category_filter = isset($_GET['category_id']) ? (int)$_GET['category_id'] : 0;
 $cat_stmt = $pdo->query("SELECT category_id, category FROM category ORDER BY category ASC");
 $categories = $cat_stmt->fetchAll();
 
-// search query
-$query = "SELECT b.book_id, b.title, b.author, b.available_copies, c.category
+// search query - Isinama na ang b.cover_image
+$query = "SELECT b.book_id, b.title, b.author, b.available_copies, b.cover_image, c.category
           FROM books b
           JOIN category c ON b.category_id = c.category_id
           WHERE 1=1";
@@ -52,7 +52,7 @@ $res_counts = $pdo->query("
     SELECT book_id, COUNT(*) FROM reservations WHERE status = 'Active' GROUP BY book_id
 ")->fetchAll(PDO::FETCH_KEY_PAIR);
 
-// This member's active reservations: book_id => how many people are ahead of them
+// This member's active reservations
 $my_res = [];
 if (isset($_SESSION['member_id'])) {
     $r = $pdo->prepare("
@@ -66,8 +66,6 @@ if (isset($_SESSION['member_id'])) {
     $r->execute(['member_id' => $_SESSION['member_id']]);
     $my_res = $r->fetchAll(PDO::FETCH_KEY_PAIR);
 }
-
-
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -76,41 +74,51 @@ if (isset($_SESSION['member_id'])) {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Catalog - Community Library</title>
 
-    <!-- Fonts & Icons -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+    <!-- Google Fonts & Bootstrap Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
     <style>
         :root {
-            --primary-green: #14532d;
+            --primary-green: #0f392b;
+            --primary-light: #15803d;
             --primary-hover: #166534;
             --accent-green: #dcfce7;
-            --dark-bg: #1c1917;
-            --light-bg: #fafaf9;
-            --text-main: #292524;
-            --text-muted: #78716c;
+            --accent-emerald: #10b981;
+            --dark-bg: #111827;
+            --light-bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: rgba(226, 232, 240, 0.8);
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+            --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
         }
 
         body {
             font-family: 'Inter', sans-serif;
             background-color: var(--light-bg);
             color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         h1, h2, h3, h4, h5, .navbar-brand {
             font-family: 'Outfit', sans-serif;
         }
 
-        .text-theme {
-            color: var(--primary-green);
-        }
-
-        /* Navbar */
+        /* --- Navbar Redesign --- */
         .navbar {
-            background-color: var(--primary-green) !important;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.1);
-            padding: 1rem 0;
+            background: rgba(255, 255, 255, 0.85) !important;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border-color);
+            padding: 0.85rem 0;
+            transition: all 0.3s ease;
         }
 
         .navbar-brand {
@@ -118,289 +126,273 @@ if (isset($_SESSION['member_id'])) {
             align-items: center;
             gap: 12px;
             font-weight: 800;
-            color: white !important;
-            font-size: 1.25rem;
-            letter-spacing: -0.5px;
+            color: var(--primary-green) !important;
+            font-size: 1.2rem;
+            letter-spacing: -0.3px;
         }
 
         .logo-box {
-            width: 40px;
-            height: 40px;
-            background: white;
-            color: var(--primary-green);
-            border-radius: 10px;
+            width: 42px;
+            height: 42px;
+            background: linear-gradient(135deg, var(--primary-green), var(--accent-emerald));
+            color: white;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            font-size: 1.25rem;
+            box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
             flex-shrink: 0;
+            transition: transform 0.3s ease;
+        }
+
+        .navbar-brand:hover .logo-box {
+            transform: scale(1.05) rotate(-3deg);
         }
 
         .nav-link {
-            color: rgba(255, 255, 255, 0.85) !important;
+            color: var(--text-main) !important;
             font-weight: 500;
             font-size: 0.95rem;
-            padding: 0.5rem 1rem !important;
-            transition: all 0.3s ease;
-            border-radius: 8px;
+            padding: 0.5rem 1.1rem !important;
+            transition: all 0.25s ease;
+            border-radius: 50px;
         }
 
-        .nav-link:hover,
-        .nav-link.active {
-            color: white !important;
-            background-color: rgba(255, 255, 255, 0.15);
+        .nav-link:hover, .nav-link.active {
+            color: var(--primary-light) !important;
+            background-color: var(--accent-green);
         }
 
-        /* Book cards */
+        /* --- Page Header Banner --- */
+        .catalog-header {
+            background: radial-gradient(circle at 50% 20%, #166534 0%, var(--primary-green) 70%, #062319 100%);
+            padding: 50px 0 65px;
+            color: white;
+            border-bottom-left-radius: 32px;
+            border-bottom-right-radius: 32px;
+            box-shadow: 0 10px 30px rgba(15, 57, 43, 0.15);
+            margin-bottom: -45px;
+            position: relative;
+            z-index: 10;
+        }
+
+        .catalog-header h2 {
+            font-size: 2.25rem;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+        }
+
+        .catalog-header p {
+            color: #d1d5db;
+            font-size: 1rem;
+            margin-bottom: 0;
+        }
+
+        /* --- Search & Filter Bar --- */
+        .search-filter-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            z-index: 20;
+            margin-bottom: 2.5rem;
+        }
+
+        .form-select, .form-control {
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            padding: 10px 16px;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .form-select:focus, .form-control:focus {
+            border-color: var(--accent-emerald);
+            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.15);
+        }
+
+        /* --- Book Cards --- */
         .card-custom {
             display: flex;
             flex-direction: column;
             height: 100%;
-            background: white;
-            border: 1px solid #e7e5e4;
-            border-radius: 14px;
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 1.25rem;
+            transition: all 0.35s cubic-bezier(0.165, 0.84, 0.44, 1);
+            box-shadow: var(--shadow-sm);
         }
 
         .card-custom:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            transform: translateY(-6px);
+            box-shadow: var(--shadow-lg);
+            border-color: rgba(16, 185, 129, 0.3);
+        }
+
+        /* Cover Image Box */
+        .book-cover-box {
+            width: 100%;
+            height: 230px;
+            border-radius: 14px;
+            overflow: hidden;
+            background: #f1f5f9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 1rem;
+            position: relative;
+            border: 1px solid var(--border-color);
+        }
+
+        .book-cover-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.35s ease;
+        }
+
+        .card-custom:hover .book-cover-img {
+            transform: scale(1.06);
+        }
+
+        .book-cover-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 10px;
         }
 
         .badge-category {
             background-color: var(--accent-green);
-            color: var(--primary-green);
+            color: var(--primary-light);
             font-weight: 600;
-        }
-        
-            @media screen and (min-width: 1800px) {
-        html {
-            font-size: clamp(16px, 0.85vw, 30px);
+            font-size: 0.75rem;
+            padding: 5px 12px;
+            border-radius: 50px;
         }
 
-        body {
-            font-size: 1rem;
-            line-height: 1.55;
-        }
-
-        .container {
-            width: min(94vw, 3200px) !important;
-            max-width: 3200px !important;
-        }
-
-        .container-fluid {
-            padding-left: clamp(1rem, 2vw, 4rem);
-            padding-right: clamp(1rem, 2vw, 4rem);
-        }
-
-        .row {
-            --bs-gutter-x: clamp(1rem, 1.35vw, 3rem);
-            --bs-gutter-y: clamp(0.75rem, 0.9vw, 2rem);
-        }
-
-        .navbar {
-            padding-top: clamp(0.65rem, 0.75vw, 1.5rem) !important;
-            padding-bottom: clamp(0.65rem, 0.75vw, 1.5rem) !important;
-        }
-
-        .navbar-brand {
-            font-size: clamp(1.1rem, 0.8vw, 1.75rem) !important;
-            gap: clamp(0.5rem, 0.65vw, 1.25rem);
-            letter-spacing: normal;
-            line-height: 1.25;
-            white-space: normal;
-            max-width: 60%;
-        }
-
-        .nav-link {
-            font-size: clamp(0.9rem, 0.55vw, 1.2rem) !important;
-            padding: 0.55em 0.9em !important;
-        }
-
-        .logo-box {
-            width: clamp(40px, 1.8vw, 68px);
-            height: clamp(40px, 1.8vw, 68px);
-            font-size: clamp(1.1rem, 0.75vw, 1.8rem);
-        }
-
-        /* Headings */
-        h1 {
-            font-size: clamp(2rem, 2vw, 4.5rem);
-            line-height: 1.15;
-        }
-
-        h2 {
-            font-size: clamp(1.65rem, 1.45vw, 3.1rem);
-            line-height: 1.2;
-        }
-
-        h3 {
-            font-size: clamp(1.35rem, 1.1vw, 2.4rem);
-            line-height: 1.25;
-        }
-
-        h4 {
-            font-size: clamp(1.15rem, 0.9vw, 2rem);
-        }
-
-        .form-control,
-        .form-select {
-            font-size: clamp(0.9rem, 0.55vw, 1.2rem);
-            min-height: clamp(2.5rem, 2.2vw, 3.8rem);
-            padding: 0.65em 0.85em;
-            min-width: 0;
-        }
-
-        .form-label {
-            font-size: clamp(0.9rem, 0.55vw, 1.15rem);
-        }
-
-        .btn,
-        .btn-primary-custom,
-        .btn-outline-custom {
-            font-size: clamp(0.85rem, 0.52vw, 1.2rem);
+        .book-title {
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: var(--text-main);
             line-height: 1.35;
-            white-space: normal;
+            margin-bottom: 0.25rem;
         }
 
-        .card,
-        .card-custom,
-        .feature-card {
-            border-radius: clamp(12px, 0.75vw, 24px);
+        .book-author {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            margin-bottom: 1rem;
         }
 
-        .card-body,
-        .card-custom,
-        .feature-card {
-            min-width: 0;
+        /* Status Badges */
+        .status-pill {
+            font-size: 0.82rem;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 50px;
+            white-space: nowrap;
         }
 
-        .stat-number {
-            font-size: clamp(1.75rem, 1.35vw, 3rem) !important;
-            line-height: 1.2;
-            overflow-wrap: anywhere;
+        .status-pill.available {
+            background: #ecfdf5;
+            color: #047857;
+            border: 1px solid #a7f3d0;
         }
 
-        .icon-circle {
-            width: clamp(48px, 1.8vw, 68px);
-            height: clamp(48px, 1.8vw, 68px);
-            font-size: clamp(1.2rem, 0.8vw, 2rem);
+        .status-pill.unavailable {
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
         }
 
-        .card-title {
-            font-size: clamp(1rem, 0.68vw, 1.45rem);
+        .status-pill.hold {
+            background: #fffbeb;
+            color: #b45309;
+            border: 1px solid #fde68a;
         }
 
-        .card-text {
-            font-size: clamp(0.9rem, 0.58vw, 1.2rem);
-            overflow-wrap: anywhere;
+        /* --- Buttons --- */
+        .btn-theme-success {
+            background-color: var(--primary-green);
+            color: white;
+            font-weight: 600;
+            border-radius: 50px;
+            padding: 8px 18px;
+            transition: all 0.25s ease;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
         }
 
-        .table {
-            font-size: clamp(0.9rem, 0.55vw, 1.2rem);
-            vertical-align: middle;
+        .btn-theme-success:hover {
+            background-color: var(--primary-hover);
+            color: white;
+            transform: translateY(-1px);
         }
 
-        .table > :not(caption) > * > * {
-            padding: clamp(0.55rem, 0.55vw, 1.2rem);
-            vertical-align: middle;
+        .btn-theme-outline {
+            border: 1.5px solid var(--primary-light);
+            color: var(--primary-light);
+            font-weight: 600;
+            border-radius: 50px;
+            padding: 5px 16px;
+            font-size: 0.88rem;
+            transition: all 0.2s ease;
+            background: transparent;
         }
 
-        .table-responsive {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
+        .btn-theme-outline:hover {
+            background-color: var(--accent-green);
+            color: var(--primary-green);
+            border-color: var(--accent-green);
         }
 
-        .hero-section {
-            padding: clamp(100px, 4.8vw, 200px)
-                    clamp(20px, 2vw, 64px)
-                    clamp(85px, 4vw, 165px);
+        /* --- Footer --- */
+        .footer {
+            background-color: var(--dark-bg);
+            padding: 60px 0 30px;
+            border-top: 4px solid var(--accent-emerald);
+            color: #9ca3af;
+            margin-top: auto;
         }
 
-        .hero-title {
-            font-size: clamp(3rem, 3vw, 6.5rem);
-            line-height: 1.12;
+        .footer-logo {
+            font-family: 'Outfit', sans-serif;
+            color: white;
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
         }
 
-        .hero-subtitle {
-            font-size: clamp(1rem, 0.85vw, 1.65rem);
-            max-width: min(72vw, 1200px);
-            line-height: 1.6;
+        .footer-links a {
+            color: #d1d5db;
+            text-decoration: none;
+            margin: 0 12px;
+            font-size: 0.92rem;
+            transition: color 0.2s;
         }
 
-        .features-wrapper {
-            padding-bottom: clamp(3rem, 4vw, 8rem);
+        .footer-links a:hover {
+            color: var(--accent-emerald);
         }
 
-        .feature-card {
-            height: 100%;
+        .footer-divider {
+            color: #4b5563;
         }
-
-        .auth-card {
-            width: min(88vw, 3000px) !important;
-            max-width: min(88vw, 3000px) !important;
-        }
-
-        .auth-sidebar,
-        .auth-form-wrapper {
-            padding: clamp(2rem, 2.6vw, 5rem);
-        }
-
-        .header {
-            margin-bottom: clamp(1.5rem, 2vw, 3.5rem);
-            padding-bottom: clamp(0.5rem, 0.7vw, 1.25rem);
-        }
-
-        .no-print-btn {
-            font-size: clamp(0.9rem, 0.55vw, 1.2rem);
-            padding: 0.7em 1.15em;
-        }
-    }
-
-    @media screen and (min-width: 1200px) {
-        .table td,
-        .table th {
-            overflow-wrap: anywhere;
-        }
-
-        .table form,
-        .table .d-flex {
-            flex-wrap: wrap;
-        }
-    }
-
-    @media screen and (max-width: 767.98px) {
-        .navbar-brand {
-            max-width: calc(100% - 64px);
-            font-size: 1rem !important;
-            white-space: normal;
-        }
-
-        .hero-title {
-            font-size: clamp(2rem, 8vw, 2.8rem);
-        }
-
-        .hero-section {
-            padding: 80px 16px 72px;
-            border-bottom-left-radius: 24px;
-            border-bottom-right-radius: 24px;
-        }
-
-        .auth-card {
-            max-width: 100%;
-        }
-
-        .auth-sidebar,
-        .auth-form-wrapper {
-            padding: 1.5rem;
-        }
-
-        .table-responsive {
-            overflow-x: auto;
-        }
-    }
     </style>
 </head>
 <body>
@@ -408,52 +400,45 @@ if (isset($_SESSION['member_id'])) {
 <!-- Navigation Bar -->
 <nav class="navbar navbar-expand-lg sticky-top">
     <div class="container">
-        <!-- Logo -->
         <a class="navbar-brand" href="homepage.php">
             <div class="logo-box"><i class="bi bi-book-half"></i></div>
-            Community Library Management System
+            <span>Community Library</span>
         </a>
 
-        <!-- Mobile Toggle Button -->
         <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <!-- Nav Links -->
         <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto gap-2 mt-3 mt-lg-0">
+            <ul class="navbar-nav ms-auto gap-1 mt-3 mt-lg-0 align-items-lg-center">
                 <li class="nav-item">
-                    <a class="nav-link" href="homepage.php">Home</a>
+                    <a class="nav-link" href="homepage.php"><i class="bi bi-house-door me-1"></i>Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link active" href="catalog.php">Catalog</a>
+                    <a class="nav-link active fw-bold text-success" href="catalog.php"><i class="bi bi-journal-bookmark me-1"></i>Catalog</a>
                 </li>
 
-                <!-- Dynamic Auth Options -->
                 <?php if (isset($_SESSION['member_id'])): ?>
                     <li class="nav-item">
                         <?php if ($_SESSION['role_id'] == 1): ?>
-                            <!-- Admins -->
-                            <a class="nav-link fw-bold" style="color: #dcfce7;" href="admin_dashboard.php">Admin Panel</a>
+                            <a class="nav-link fw-bold text-success" href="admin_dashboard.php"><i class="bi bi-speedometer2 me-1"></i>Admin Panel</a>
                         <?php else: ?>
-                            <!-- Residents -->
-                            <a class="nav-link fw-bold" style="color: #dcfce7;" href="member_dashboard.php">Dashboard</a>
+                            <a class="nav-link fw-bold text-success" href="member_dashboard.php"><i class="bi bi-person-badge me-1"></i>Dashboard</a>
                         <?php endif; ?>
                     </li>
                     <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
-                        <a class="btn fw-semibold px-4 rounded-pill" 
-                        style="background-color: transparent; border: 1.5px solid white; color: white; transition: all 0.2s;" 
-                        onmouseover="this.style.backgroundColor='var(--accent-green)'; this.style.borderColor='var(--accent-green)'; this.style.color='var(--primary-green)';" 
-                        onmouseout="this.style.backgroundColor='transparent'; this.style.borderColor='white'; this.style.color='white';" 
-                        href="logout.php">Logout</a>
+                        <a class="btn btn-outline-danger btn-sm rounded-pill px-4" href="logout.php">
+                            <i class="bi bi-box-arrow-right me-1"></i>Logout
+                        </a>
                     </li>
                 <?php else: ?>
-                    <!-- Logged-out users -->
                     <li class="nav-item">
-                        <a class="nav-link" href="register.php">Membership</a>
+                        <a class="nav-link" href="register.php"><i class="bi bi-person-plus me-1"></i>Membership</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="login.php">Login</a>
+                    <li class="nav-item ms-lg-1">
+                        <a class="btn btn-sm px-4 rounded-pill text-white fw-semibold" style="background-color: var(--primary-green);" href="login.php">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Login
+                        </a>
                     </li>
                 <?php endif; ?>
             </ul>
@@ -461,16 +446,22 @@ if (isset($_SESSION['member_id'])) {
     </div>
 </nav>
 
-<!-- Main Content -->
-<div class="container mt-5 mb-5">
-    <div class="row mb-4 align-items-center">
-        <div class="col-md-6">
-            <h2 class="text-theme fw-bold mb-0">Library Catalog</h2>
-        </div>
-        <div class="col-md-6">
-            <!-- Search Form -->
-            <form action="catalog.php" method="GET" class="d-flex gap-2">
-                <select name="category_id" class="form-select" style="max-width: 180px;" onchange="this.form.submit()">
+<!-- Page Header Banner -->
+<header class="catalog-header text-center">
+    <div class="container">
+        <h2><i class="bi bi-journal-album me-2"></i>Library Catalog</h2>
+        <p>Explore available titles, reserve physical copies, or borrow directly.</p>
+    </div>
+</header>
+
+<!-- Main Content Area -->
+<div class="container mb-5" style="position: relative; z-index: 30;">
+
+    <!-- Search & Filter Bar -->
+    <div class="search-filter-card">
+        <form action="catalog.php" method="GET" class="row g-3 align-items-center">
+            <div class="col-12 col-md-4 col-lg-3">
+                <select name="category_id" class="form-select" onchange="this.form.submit()">
                     <option value="0">All Categories</option>
                     <?php foreach ($categories as $cat): ?>
                         <option value="<?= $cat['category_id']; ?>" <?= $category_filter == $cat['category_id'] ? 'selected' : ''; ?>>
@@ -478,21 +469,40 @@ if (isset($_SESSION['member_id'])) {
                         </option>
                     <?php endforeach; ?>
                 </select>
-                <input type="text" name="search" class="form-control" placeholder="Search by title or author..." value="<?= htmlspecialchars($search_query); ?>">
-                <button type="submit" class="btn btn-success px-4" style="background-color: #14532d;">Search</button>
+            </div>
+            
+            <div class="col-12 col-md-5 col-lg-6">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0 text-muted" style="border-radius: 12px 0 0 12px;">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" name="search" class="form-control border-start-0 ps-0" style="border-radius: 0 12px 12px 0;" placeholder="Search by title or author..." value="<?= htmlspecialchars($search_query); ?>">
+                </div>
+            </div>
+
+            <div class="col-12 col-md-3 col-lg-3 d-flex gap-2">
+                <button type="submit" class="btn btn-theme-success w-100">
+                    <i class="bi bi-search me-1"></i> Search
+                </button>
                 <?php if ($search_query || $category_filter > 0): ?>
-                    <a href="catalog.php" class="btn btn-secondary">Clear</a>
+                    <a href="catalog.php" class="btn btn-outline-secondary rounded-pill px-3 d-flex align-items-center">Clear</a>
                 <?php endif; ?>
-            </form>
-        </div>
+            </div>
+        </form>
     </div>
 
     <!-- Messages -->
     <?php if (isset($_SESSION['success'])): ?>
-        <div class="alert alert-success"><?= htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?></div>
+        <div class="alert alert-success alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i><?= htmlspecialchars($_SESSION['success']); unset($_SESSION['success']); ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     <?php endif; ?>
     <?php if (isset($_SESSION['error'])): ?>
-        <div class="alert alert-danger"><?= htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?></div>
+        <div class="alert alert-danger alert-dismissible fade show rounded-4 shadow-sm mb-4" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i><?= htmlspecialchars($_SESSION['error']); unset($_SESSION['error']); ?>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     <?php endif; ?>
 
     <!-- Books Grid -->
@@ -500,59 +510,88 @@ if (isset($_SESSION['member_id'])) {
         <?php if (count($books) > 0): ?>
             <?php foreach ($books as $book): ?>
                 <div class="col">
-                    <div class="card card-custom p-3">
-                        <span class="badge badge-category mb-2 align-self-start"><?= htmlspecialchars($book['category']); ?></span>
-                        <h5 class="card-title fw-bold text-dark mb-1"><?= htmlspecialchars($book['title']); ?></h5>
-                        <p class="text-muted small mb-3">by <?= htmlspecialchars($book['author']); ?></p>
+                    <div class="card card-custom">
+                        
+                        <!-- Top Category Tag -->
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge badge-category"><?= htmlspecialchars($book['category']); ?></span>
+                        </div>
 
-                        <div class="mt-auto border-top pt-3 d-flex justify-content-between align-items-center">
+                        <!-- Book Cover Image / Fallback -->
+                        <div class="book-cover-box">
+                            <?php 
+                                $cover_path = 'uploads/covers/' . $book['cover_image'];
+                                if (!empty($book['cover_image']) && file_exists($cover_path)): 
+                            ?>
+                                <img src="<?= htmlspecialchars($cover_path); ?>" alt="<?= htmlspecialchars($book['title']); ?>" class="book-cover-img">
+                            <?php else: ?>
+                                <div class="book-cover-placeholder">
+                                    <i class="bi bi-book fs-1 text-success mb-1"></i>
+                                    <span class="small fw-semibold text-secondary">No Cover Available</span>
+                                </div>
+                            <?php endif; ?>
+                        </div>
+
+                        <h5 class="book-title"><?= htmlspecialchars($book['title']); ?></h5>
+                        <p class="book-author">by <?= htmlspecialchars($book['author']); ?></p>
+
+                        <div class="mt-auto border-top pt-3 d-flex justify-content-between align-items-center gap-2 flex-wrap">
                             <?php
                                 $bid   = $book['book_id'];
                                 $avail = (int) $book['available_copies'];
                                 $held  = (int) ($res_counts[$bid] ?? 0);
                                 $ahead = isset($my_res[$bid]) ? (int) $my_res[$bid] : null; 
-
                                 $free_copies = $avail - $held;
                             ?>
 
                             <!-- Availability Indicators -->
                             <?php if ($ahead !== null && $ahead < $avail): ?>
-                                <span class="small fw-bold text-success">Reserved for You</span>
+                                <span class="status-pill available"><i class="bi bi-bookmark-check-fill"></i> Reserved for You</span>
                             <?php elseif ($avail == 0): ?>
-                                <span class="small fw-bold text-danger">0 Available</span>
+                                <span class="status-pill unavailable"><i class="bi bi-x-circle-fill"></i> 0 Available</span>
                             <?php elseif ($free_copies > 0): ?>
-                                <span class="small fw-bold text-success"><?= $free_copies; ?> Available</span>
+                                <span class="status-pill available"><i class="bi bi-check-circle-fill"></i> <?= $free_copies; ?> Available</span>
                             <?php else: ?>
-                                <span class="small fw-bold" style="color: #b45309;">Copy on Hold</span>
+                                <span class="status-pill hold"><i class="bi bi-hourglass-split"></i> Copy on Hold</span>
                             <?php endif; ?>
 
-                            <!-- Borrow and Reserve -->
-                            <?php if (in_array($bid, $borrowed_ids)): ?>
-                                <button class="btn btn-secondary btn-sm" disabled>Already Borrowed</button>
-                            <?php elseif ($ahead !== null && $ahead < $avail): ?>
-                                <form action="borrow_process.php" method="POST" class="m-0">
-                                    <!-- csrf -->
-                                    <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">                                
-                                    <input type="hidden" name="book_id" value="<?= $bid; ?>">
-                                    <button type="submit" class="btn btn-success btn-sm">Borrow (reserved)</button>
-                                </form>
-                            <?php elseif ($ahead !== null): ?>
-                                <span class="badge bg-info text-dark">Reserved &middot; #<?= $ahead + 1; ?> in line</span>
-                            <?php elseif ($avail > $held): ?>
-                                <form action="borrow_process.php" method="POST" class="m-0">
-                                    <!-- csrf -->
-                                    <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">  
-                                    <input type="hidden" name="book_id" value="<?= $bid; ?>">
-                                    <button type="submit" class="btn btn-outline-success btn-sm">Borrow</button>
-                                </form>
+                            <!-- Role-based Action Buttons -->
+                            <?php if (isset($_SESSION['member_id']) && $_SESSION['role_id'] == 1): ?>
+                                <!-- ADMIN VIEW -->
+                                <span class="badge bg-light text-secondary border rounded-pill px-3 py-2 small ms-auto" title="Admins manage books from dashboard">
+                                    <i class="bi bi-shield-lock me-1"></i>Admin View
+                                </span>
+                            <?php elseif (isset($_SESSION['member_id'])): ?>
+                                <!-- RESIDENT / MEMBER VIEW -->
+                                <?php if (in_array($bid, $borrowed_ids)): ?>
+                                    <button class="btn btn-secondary btn-sm rounded-pill px-3" disabled>Borrowed</button>
+                                <?php elseif ($ahead !== null && $ahead < $avail): ?>
+                                    <form action="borrow_process.php" method="POST" class="m-0">
+                                        <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">                                
+                                        <input type="hidden" name="book_id" value="<?= $bid; ?>">
+                                        <button type="submit" class="btn btn-success btn-sm rounded-pill px-3">Borrow</button>
+                                    </form>
+                                <?php elseif ($ahead !== null): ?>
+                                    <span class="badge bg-info text-dark rounded-pill py-2 px-3">#<?= $ahead + 1; ?> in line</span>
+                                <?php elseif ($avail > $held): ?>
+                                    <form action="borrow_process.php" method="POST" class="m-0">
+                                        <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">  
+                                        <input type="hidden" name="book_id" value="<?= $bid; ?>">
+                                        <button type="submit" class="btn btn-theme-outline btn-sm">Borrow</button>
+                                    </form>
+                                <?php else: ?>
+                                    <form action="reserve_process.php" method="POST" class="m-0">
+                                        <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">  
+                                        <input type="hidden" name="action" value="reserve">
+                                        <input type="hidden" name="book_id" value="<?= $bid; ?>">
+                                        <button type="submit" class="btn btn-outline-warning btn-sm rounded-pill">Reserve</button>
+                                    </form>
+                                <?php endif; ?>
                             <?php else: ?>
-                                <form action="reserve_process.php" method="POST" class="m-0">
-                                    <!-- csrf -->
-                                    <input type="hidden" name="csrf" value="<?= $_SESSION['csrf']; ?>">  
-                                    <input type="hidden" name="action" value="reserve">
-                                    <input type="hidden" name="book_id" value="<?= $bid; ?>">
-                                    <button type="submit" class="btn btn-outline-warning btn-sm">Reserve</button>
-                                </form>
+                                <!-- GUEST VIEW -->
+                                <a href="login.php" class="btn btn-theme-outline btn-sm">
+                                    Login to Borrow
+                                </a>
                             <?php endif; ?>
                         </div>
                     </div>
@@ -560,12 +599,51 @@ if (isset($_SESSION['member_id'])) {
             <?php endforeach; ?>
         <?php else: ?>
             <div class="col-12">
-                <div class="alert alert-warning text-center">No books found matching your search.</div>
+                <div class="card p-5 text-center border-0 shadow-sm rounded-4">
+                    <div class="mb-3 text-muted display-6"><i class="bi bi-journal-x"></i></div>
+                    <h5 class="fw-bold">No books found</h5>
+                    <p class="text-muted mb-3">We couldn't find any titles or authors matching your search criteria.</p>
+                    <div>
+                        <a href="catalog.php" class="btn btn-theme-success">View All Books</a>
+                    </div>
+                </div>
             </div>
         <?php endif; ?>
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<!-- Dynamic Footer -->
+<footer class="footer text-center">
+    <div class="container">
+        <div class="footer-logo">
+            <i class="bi bi-book-half me-2" style="color: var(--accent-emerald);"></i>Community Library System
+        </div>
+        
+        <div class="footer-links my-4 d-flex flex-wrap justify-content-center gap-2 align-items-center">
+            <a href="homepage.php">Home</a>
+            <span class="footer-divider d-none d-sm-inline">•</span>
+            <a href="catalog.php">Catalog</a>
+
+            <?php if (isset($_SESSION['member_id'])): ?>
+                <span class="footer-divider d-none d-sm-inline">•</span>
+                <?php if ($_SESSION['role_id'] == 1): ?>
+                    <a href="admin_dashboard.php">Admin Panel</a>
+                <?php else: ?>
+                    <a href="member_dashboard.php">Dashboard</a>
+                <?php endif; ?>
+            <?php else: ?>
+                <span class="footer-divider d-none d-sm-inline">•</span>
+                <a href="register.php">Membership</a>
+            <?php endif; ?>
+        </div>
+
+        <p class="text-secondary small mb-0 mt-4" style="opacity: 0.75;">
+            &copy; <?= date('Y'); ?> Community Library Management System.<br>Designed for Student Development.
+        </p>
+    </div>
+</footer>
+
+<!-- Bootstrap 5 JS Bundle -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
